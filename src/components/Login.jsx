@@ -28,6 +28,7 @@ const Login = () => {
       dispatch(addUser(res.data));
       return navigate("/")
     } catch (error) {
+        setError(error?.response?.data || "Something went wrong")
         console.log(error)
     }
     
@@ -97,7 +98,8 @@ const Login = () => {
                 </button>
               </div>
             </div>
-
+            <p className="text-red-500">{error}</p>  
+                
             <button onClick={handleLogin} className="btn btn-primary w-full"> Login  </button>
 
       

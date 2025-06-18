@@ -10,3 +10,8 @@
 - install react-redux @reduxjs/toolkit
 - create a utils folder => create store => wrap app component inside Provider => createSlice => add reducer to store
 - update navbar features using useSelector() hook
+- refactor our code to add constant file 
+- should not access other routes without login
+- if token is not present , redirect to login page
+- Logout functionality on NavBar
+- Profile page
