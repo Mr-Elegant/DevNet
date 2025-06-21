@@ -6,7 +6,7 @@ import Feed from "./components/Feed";
 
 const App = () => {
   return (
-    <div className="h-full">
+    <div className="flex flex-col h-screen">
       
       <Routes>
         <Route path='/' element={<Body />}>

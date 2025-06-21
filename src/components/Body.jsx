@@ -10,33 +10,34 @@ import { useEffect } from 'react'
 const Body = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const userData = useSelector((store) => store.user)
+  const userData = useSelector((store) => store.user);
 
-
-  const fetchUser = async () => {     
-    if(userData) return;       // if userData is already present then no more again auth api call
+  const fetchUser = async () => {
+    if (userData) return;
     try {
-      const res = await axios.get(BASE_URL + "/profile/view", {withCredentials:true});
-      dispatch(addUser(res.data))
+      const res = await axios.get(BASE_URL + "/profile/view", { withCredentials: true });
+      dispatch(addUser(res.data));
     } catch (error) {
-        if(error.status === 401){
-          navigate("/login");
-        }
-        console.log(error)
+      if (error.response?.status === 401) navigate("/login");
+      console.error(error);
     }
-  }
+  };
 
-  useEffect(()=> {
+  useEffect(() => {
     fetchUser();
-  },[])
+  }, []);
 
   return (
-    <div>
-        <NavBar />
+    <div className="flex flex-col min-h-screen">
+      <NavBar />
+      
+      <main className="flex-1">
         <Outlet />
-        <Footer />
+      </main>
+
+      <Footer />
     </div>
-  )
-}
+  );
+};
 
 export default Body

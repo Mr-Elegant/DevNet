@@ -1,8 +1,7 @@
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
-import axios from "axios"
+import axios from "axios";
 import { removeUser } from "../utils/userSlice";
 
 const NavBar = () => {
@@ -12,63 +11,60 @@ const NavBar = () => {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post(BASE_URL + "/logout",{}, {withCredentials: true});
-      dispatch(removeUser());    
-      return navigate("/login");
+      await axios.post(BASE_URL + "/logout", {}, { withCredentials: true });
+      dispatch(removeUser());
+      navigate("/login");
     } catch (error) {
-        console.log(error);
+      console.error(error);
     }
-  }
+  };
 
   return (
-    <div className="navbar bg-base-300 shadow-sm">
-      <div className="flex-1">
-        <Link to={"/"} className="btn btn-ghost text-xl">
-          <img src="/DevNet F1.png" className="w-10 h-8 inline rounded-lg" />
-          <span className="btn btn-ghost text-xl text-sky-300">DevNet</span>
+    <nav className="navbar bg-[#1F1F1F] text-neutral-content px-4 shadow-md sticky top-0 z-50">
+      <div className="flex-1 gap-2">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition">
+          <img src="/DevNet F1.png" alt="DevNet Logo" className="w-9 h-9 rounded-lg" />
+          <span className="text-2xl font-bold text-sky-400 tracking-wide">DevNet</span>
         </Link>
       </div>
+
       {user && (
-        <div className="flex gap-2 items-center">
-          <span className="form-control">Welcome, {user.firstName}</span>
-          <div className="dropdown dropdown-end mx-5 flex">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-circle avatar"
-            >
-              <div className="w-10 rounded-full">
-                <img alt="user photo" src={user.photoUrl} />
+        <div className="flex items-center gap-4">
+          <span className="hidden sm:inline text-sm text-gray-300">Welcome, {user.firstName}</span>
+
+          <div className="dropdown dropdown-end relative">
+            <button tabIndex={0} className="btn btn-ghost btn-circle avatar ring-2 ring-sky-400">
+              <div className="w-10 rounded-full overflow-hidden">
+                <img alt="User Avatar" src={user.photoUrl} />
               </div>
-            </div>
+            </button>
+
             <ul
               tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+              className="menu dropdown-content bg-neutral rounded-lg mt-3 p-2 shadow-lg w-52 z-[999] text-sm"
             >
               <li>
-                <Link to="/profile" className="justify-between">
-                  Profile
-                  <span className="badge">New</span>
+                <Link to="/profile" className="flex justify-between">
+                  Profile <span className="badge badge-primary text-white">New</span>
                 </Link>
               </li>
               <li>
                 <Link to="/connections">Connections</Link>
               </li>
-
               <li>
                 <Link to="/requests">Requests</Link>
               </li>
               <li>
-                <Link to="/premium">Premium</Link>
+                <Link to="/premium" className="text-pink-400 hover:text-pink-500">Premium</Link>
               </li>
               <li>
-                <a onClick={handleLogout}>Logout</a>
+                <button onClick={handleLogout} className="text-red-400 hover:text-red-500 text-left w-full">Logout</button>
               </li>
             </ul>
           </div>
         </div>
       )}
-    </div>
+    </nav>
   );
 };
 
