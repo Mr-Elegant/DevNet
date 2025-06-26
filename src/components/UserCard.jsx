@@ -34,8 +34,8 @@ const UserCard = ({ user }) => {
             className="w-full h-96 object-cover"
           />
           <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 text-white">
-            <h2 className="text-2xl font-bold">{firstName} {lastName}</h2>
-            {age && gender && <p className="text-sm text-gray-300">{age}, {gender}</p>}
+            <h2 className="text-2xl font-bold text-pink-400">{firstName} {lastName}</h2>
+            {age && gender && <p className="text-sm text-blue-300">{age}, {gender}</p>}
           </div>
         </div>
 

@@ -1,35 +1,91 @@
 const Footer = () => {
   return (
-    <footer className="bg-[#1f1f1f] text-gray-400 py-3 px-4 border-t border-gray-700">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-2">
+    <footer className="bg-[#1f1f1f] text-gray-400 py-4 px-6 border-t border-gray-700 shadow-inner">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-2">
           <img src="/DevNet F1.png" alt="DevNet Logo" className="w-8 h-8 rounded-lg" />
           <span className="text-sm">&copy; {new Date().getFullYear()} DevNet. All rights reserved.</span>
         </div>
-        <div className="flex gap-4 mt-2 md:mt-0">
-          {/* Social icons */}
-          <a href="#" className="hover:text-white transition">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="text-gray-400" viewBox="0 0 24 24">
-            <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045C7.828 8.53 4.2 6.57 1.77 3.591c-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
-          </svg>
-        </a>
-        <a href="#" className="hover:text-white transition">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="text-gray-400" viewBox="0 0 24 24">
-            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-          </svg>
-        </a>
-        <a href="#" className="hover:text-white transition">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="text-gray-400" viewBox="0 0 24 24">
-            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
-          </svg>
-        </a>
+
+        <div className="flex gap-4">
+          {/* X (formerly Twitter) */}
+          <a href="#" className="group hover:text-white transition duration-300" aria-label="X (Twitter)">
+  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1f1f1f] border border-gray-600 group-hover:border-white transition duration-300">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      viewBox="0 0 512 512"
+      className="w-5 h-5 text-gray-400 group-hover:text-white transition duration-300"
+    >
+      <path d="M461.2 53.1h-70.6L296.4 217.3 157.4 53.1H24.7l188.7 224.7L18.2 458.9h70.6l112.6-144.5 149.7 144.5h132.8L292.8 286.8 461.2 53.1z"/>
+    </svg>
+  </div>
+</a>
+
+
+          {/* YouTube */}
+          <a href="#" className="group hover:text-red-500 transition duration-300" aria-label="YouTube">
+  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1f1f1f] border border-gray-600 group-hover:border-red-500 transition duration-300">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition duration-300"
+      viewBox="0 0 576 512"
+      fill="currentColor"
+    >
+      <path d="M549.7 124.1c-6.3-23.7-24.9-42.3-48.6-48.6C458.7 64 288 64 288 64S117.3 64 74.9 75.5c-23.7 6.3-42.3 24.9-48.6 48.6C15.9 166.5 15.9 256 15.9 256s0 89.5 10.4 131.9c6.3 23.7 24.9 42.3 48.6 48.6C117.3 448 288 448 288 448s170.7 0 213.1-11.5c23.7-6.3 42.3-24.9 48.6-48.6 10.4-42.4 10.4-131.9 10.4-131.9s0-89.5-10.4-131.9zM232 338.8V173.2l142.8 82.8-142.8 82.8z"/>
+    </svg>
+  </div>
+</a>
+
+
+
+          {/* Facebook */}
+          <a href="#" className="group hover:text-blue-500 transition duration-300" aria-label="Facebook">
+  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1f1f1f] border border-gray-600 group-hover:border-blue-500 transition duration-300">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      viewBox="0 0 320 512"
+      className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition duration-300"
+    >
+      <path d="M279.14 288l14.22-92.66h-88.91V127.5c0-25.35 12.42-50.06 52.24-50.06H293V6.26S259.5 0 225.36 0c-73.5 0-121.14 44.38-121.14 124.72V195.3H22.89V288h81.33v224h100.17V288z"/>
+    </svg>
+  </div>
+</a>
+
+{/* LinkedIn svg */}
+<a href="#" className="group hover:text-sky-500 transition duration-300" aria-label="LinkedIn">
+  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1f1f1f] border border-gray-600 group-hover:border-sky-500 transition duration-300">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      viewBox="0 0 448 512"
+      className="w-5 h-5 text-gray-400 group-hover:text-sky-500 transition duration-300"
+    >
+      <path d="M100.28 448H7.4V148.9h92.88zm-46.44-340c-31.5 0-57-25.5-57-57S22.34 0 53.84 0s57 25.5 57 57-25.5 57-57 57zM447.9 448h-92.6V302.4c0-34.7-12.4-58.4-43.4-58.4-23.6 0-37.6 15.8-43.8 31.1-2.3 5.5-2.9 13.1-2.9 20.7V448h-92.6s1.2-269.2 0-297h92.6v42.1c12.3-19 34.4-46 83.6-46 61 0 106.6 39.8 106.6 125.3V448z"/>
+    </svg>
+  </div>
+</a>
+
+
+{/* instagram icon */}
+<a href="#" className="group hover:text-pink-500 transition duration-300" aria-label="Instagram">
+  <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1f1f1f] border border-gray-600 group-hover:border-pink-500 transition duration-300">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="currentColor"
+      viewBox="0 0 448 512"
+      className="w-5 h-5 text-gray-400 group-hover:text-pink-500 transition duration-300"
+    >
+      <path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9 114.9-51.3 114.9-114.9-51.3-114.9-114.9-114.9zm0 190.7c-41.9 0-75.8-33.9-75.8-75.8s33.9-75.8 75.8-75.8 75.8 33.9 75.8 75.8-33.9 75.8-75.8 75.8zm146.4-194.3c0 14.9-12 26.9-26.9 26.9s-26.9-12-26.9-26.9 12-26.9 26.9-26.9 26.9 12 26.9 26.9zm76.1 27.2c-.1-35.3-9.4-66.7-34.1-91.4S380.5.5 345.2.4c-35.3-.1-141-.1-176.3 0C133.6.5 102.2 9.9 77.5 34.6 52.8 59.3 43.4 90.7 43.3 126c-.1 35.3-.1 141 0 176.3.1 35.3 9.5 66.7 34.2 91.4s56.1 34.1 91.4 34.2c35.3.1 141 .1 176.3 0 35.3-.1 66.7-9.5 91.4-34.2s34.1-56.1 34.2-91.4c.1-35.3.1-141 0-176.3zM398.8 388c-7.8 19.6-23 35.4-42.6 43.2-29.5 11.7-99.5 9-132.2 9s-102.7 2.6-132.2-9c-19.6-7.8-34.8-23.6-42.6-43.2-11.7-29.5-9-99.5-9-132.2s-2.6-102.7 9-132.2c7.8-19.6 23-35.4 42.6-43.2 29.5-11.7 99.5-9 132.2-9s102.7-2.6 132.2 9c19.6 7.8 34.8 23.6 42.6 43.2 11.7 29.5 9 99.5 9 132.2s2.7 102.7-9 132.2z"/>
+    </svg>
+  </div>
+</a>
 
         </div>
       </div>
     </footer>
   );
 };
-  
-  
 
 export default Footer;
