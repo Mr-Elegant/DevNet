@@ -4,6 +4,8 @@ import Login from "./components/Login";
 import Profile from "./components/Profile";
 import Feed from "./components/Feed";
 import Connections from "./components/Connections";
+import Requests from "./components/Requests";
+import Signup from "./components/Signup";
 
 const App = () => {
   return (
@@ -14,11 +16,13 @@ const App = () => {
       {/* Glass Container */}
       <div className="relative z-10 mx-auto max-w-8xl p-4 md:p-8 backdrop-blur-md bg-white/5 border border-white/10 rounded-xl shadow-inner shadow-black/10">
         <Routes>
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/" element={<Body />}>
-            <Route index element={<Feed />} />
-            <Route path="/login" element={<Login />} />
+            <Route index element={<Feed />} />           
             <Route path="/profile" element={<Profile />} />
             <Route path="/connections" element={<Connections />} />
+            <Route path="/requests" element={<Requests />}  /> 
           </Route>
         </Routes>
       </div>

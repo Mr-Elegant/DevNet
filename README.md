@@ -17,3 +17,15 @@
 - Profile page
 - Get the feed and add the feed in the store
 - build the user card on feed
+- built my connections page
+
+
+
+
+
+Body
+    NavBar
+    Route=/ => Feed 
+    Route=/login => Login  
+    Route=/connection => Connections
+    Router=/profile => Profile
