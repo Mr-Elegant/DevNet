@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import axios from "axios";
 import UserCard from "./UserCard";
 import { addUser } from "../utils/userSlice";
+import ProfileCard from "./ProfileCard";
 
 const EditProfile = ({ user }) => {
   const [firstName, setFirstName] = useState(user.firstName);
@@ -106,7 +107,7 @@ const EditProfile = ({ user }) => {
           <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-pulse opacity-80 pointer-events-none"></div>
 
           <div className="relative z-10 bg-black/70 backdrop-blur-xl rounded-2xl shadow-lg">
-            <UserCard
+            <ProfileCard
               user={{ firstName, lastName, photoUrl, age, gender, about }}
             />
           </div>
