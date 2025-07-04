@@ -4,19 +4,20 @@ import { useDispatch } from "react-redux";
 import { removeUserFromFeed } from "../utils/feedSlice";
 
 const UserCard = ({ user }) => {
-  const { _id, firstName, lastName, photoUrl, age, gender, about } = user;
-  const dispatch = useDispatch();
+  const { _id, firstName, lastName, photoUrl, age, gender, about } = user;  // Destructure user properties
+  const dispatch = useDispatch();   // Initialize Redux dispatcher
 
   const handleSendRequest = async (status, userId) => {
     try {
+      // Send a POST request with interest status and user ID
       await axios.post(
         `${BASE_URL}/request/send/${status}/${userId}`,
         {},
-        { withCredentials: true }
+        { withCredentials: true }   // Send cookies for authentication
       );
-      dispatch(removeUserFromFeed(userId));
+      dispatch(removeUserFromFeed(userId));    // Remove user from feed after action
     } catch (err) {
-      console.error(err);
+      console.error(err);      // Log error if request fails
     }
   };
 

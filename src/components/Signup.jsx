@@ -6,6 +6,8 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
+import { useDispatch } from "react-redux"; // ✅ You may have missed this import
+import { addUser } from "../utils/userSlice";
 
 // Toast Component
 const Toast = ({ message, type = "success", duration = 3000, onClose }) => {
@@ -32,6 +34,7 @@ const Toast = ({ message, type = "success", duration = 3000, onClose }) => {
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // ✅ Needed for Redux
   const [showPassword, setShowPassword] = useState(false);
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
@@ -49,14 +52,7 @@ const Signup = () => {
   const handleSignup = async () => {
     setError("");
 
-    if (
-      !firstName ||
-      !lastName ||
-      !emailId ||
-      !password ||
-      !confirmPassword ||
-      !age
-    ) {
+    if (!firstName || !lastName || !emailId || !password || !confirmPassword || !age) {
       setError("Please fill out all fields.");
       return;
     }
@@ -67,23 +63,26 @@ const Signup = () => {
     }
 
     try {
-      await axios.post(BASE_URL + "/signup", {
+      // ✅ FIX: store response from axios
+      const res = await axios.post(BASE_URL + "/signup", {
         firstName,
         lastName,
         emailId,
         password,
         confirmPassword,
         age,
-      });
+      }, { withCredentials: true });
+
+      dispatch(addUser(res.data.data));
 
       setToast({ show: true, message: "Signup successful!", type: "success" });
 
-      // Optional: navigate after short delay
       setTimeout(() => {
-        navigate("/login");
+        navigate("/");
       }, 4000);
     } catch (err) {
       const msg = err?.response?.data?.message || "Signup failed.";
+      console.error("Signup Error:", err); // ✅ Optional debug
       setError(msg);
       setToast({ show: true, message: msg, type: "error" });
     }
@@ -101,10 +100,7 @@ const Signup = () => {
           className="w-full max-w-lg p-8 sm:p-10 rounded-2xl border backdrop-blur-md bg-white/10 shadow-xl"
           style={{
             borderColor: "#FD3FCA",
-            boxShadow: `
-            0 0 0 1px rgba(253, 63, 202, 0.5),
-            0 4px 20px rgba(253, 63, 202, 0.2)
-          `,
+            boxShadow: `0 0 0 1px rgba(253, 63, 202, 0.5), 0 4px 20px rgba(253, 63, 202, 0.2)`,
           }}
         >
           {/* Toast Notification */}
@@ -131,9 +127,7 @@ const Signup = () => {
                     alt="logo"
                   />
                 </div>
-                <h1 className="text-2xl font-bold mt-2 text-white">
-                  Hii, Developer
-                </h1>
+                <h1 className="text-2xl font-bold mt-2 text-white">Hii, Developer</h1>
                 <p className="text-base-content/60">Create your account</p>
               </div>
             </div>
@@ -141,9 +135,7 @@ const Signup = () => {
             {/* First Name */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">
-                  First Name
-                </span>
+                <span className="label-text font-medium text-white">First Name</span>
               </label>
               <input
                 type="text"
@@ -157,9 +149,7 @@ const Signup = () => {
             {/* Last Name */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">
-                  Last Name
-                </span>
+                <span className="label-text font-medium text-white">Last Name</span>
               </label>
               <input
                 type="text"
@@ -187,13 +177,12 @@ const Signup = () => {
             {/* Password */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">
-                  Password
-                </span>
+                <span className="label-text font-medium text-white">Password</span>
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"} autoComplete="new-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
                   placeholder="••••••••"
                   value={password}
@@ -212,9 +201,7 @@ const Signup = () => {
             {/* Confirm Password */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">
-                  Confirm Password
-                </span>
+                <span className="label-text font-medium text-white">Confirm Password</span>
               </label>
               <div className="relative">
                 <input

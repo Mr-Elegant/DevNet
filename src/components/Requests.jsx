@@ -3,19 +3,24 @@ import { addRequests, removeRequest } from "../utils/requestsSlice";
 import { useEffect } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
+// AOS (Animate On Scroll) library for scroll animations
 import AOS from "aos";
+// Import AOS CSS to style animations
 import "aos/dist/aos.css";
 
 const Requests = () => {
+  // Getting the 'requests' state from Redux store
   const requests = useSelector((store) => store.requests);
   const dispatch = useDispatch();
 
+  // Function to handle acceptance or rejection of a request
   const reviewRequest = async (status, _id) => {
     try {
+      // Sends POST request to review endpoint with status and request ID
       await axios.post(
         `${BASE_URL}/request/review/${status}/${_id}`,
         {},
-        { withCredentials: true }
+        { withCredentials: true }  // ensures cookies (e.g., session) are sent
       );
       dispatch(removeRequest(_id));
     } catch (error) {
@@ -23,24 +28,30 @@ const Requests = () => {
     }
   };
 
+  // Fetch all incoming connection requests when component mounts
   const fetchRequests = async () => {
     try {
+      // GET request to fetch received requests, include credentials
       const res = await axios.get(`${BASE_URL}/user/requests/received`, {
         withCredentials: true,
       });
+      // Add the fetched requests to Redux store
       dispatch(addRequests(res.data.data));
     } catch (error) {
       console.error(error);
     }
   };
 
+  // useEffect runs once when the component is first mounted
   useEffect(() => {
     fetchRequests();
     AOS.init({ duration: 800, once: true });
   }, []);
 
+   // If requests is undefined or null, render nothing
   if (!requests) return null;
 
+  // If requests array is empty, show a message
   if (requests.length === 0) {
     return (
       <h1 className="text-center text-white text-lg my-10">
@@ -49,6 +60,7 @@ const Requests = () => {
     );
   }
 
+   // If there are requests, render them
   return (
     <div className="text-center my-10 px-4">
       <h1 className="font-bold text-white text-3xl mb-6">Connection Requests</h1>

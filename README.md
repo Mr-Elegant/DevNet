@@ -4,6 +4,7 @@
 - Create BrowserRouter and wrap app component in it
 - Routes > Route=/ Body > RouteChildren
 - Create and Outlet in your Body Componenet
+- Create Signup page
 - Create Login Page
 - CORS - install cors in backend => add middleware to with configuration : origin: "http://localhost:5173", credentials: true, 
 - Whenever we make API call pass (using axios) => {withCredentials: true}   -> if not pass causes: it will send send token to other api call
@@ -18,6 +19,8 @@
 - Get the feed and add the feed in the store
 - build the user card on feed
 - built my connections page
+- built Connection Requests page
+
 
 
 
