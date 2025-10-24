@@ -51,7 +51,7 @@ Body
     - Frontend 
         - npm install -> dependencies install
         - npm run build
-        - sudo apt update 
+        - sudo apt update  
         - sudo apt install nginx  
         - sudo systemctl start nginx
         - sudo sytemctl enable nginx
