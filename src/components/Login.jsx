@@ -11,8 +11,8 @@ import Footer from "./Footer";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [emailId, setEmailId] = useState("preet@gmail.com");
-  const [password, setPassword] = useState("12345");
+  const [emailId, setEmailId] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();

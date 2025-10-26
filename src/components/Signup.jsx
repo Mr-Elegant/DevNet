@@ -140,7 +140,7 @@ const Signup = () => {
               <input
                 type="text"
                 className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder="Preet"
+                placeholder=""
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
@@ -154,7 +154,7 @@ const Signup = () => {
               <input
                 type="text"
                 className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder="Karwal"
+                placeholder=""
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
@@ -168,7 +168,7 @@ const Signup = () => {
               <input
                 type="email"
                 className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder="preet@example.com"
+                placeholder=""
                 value={emailId}
                 onChange={(e) => setEmailId(e.target.value)}
               />
