@@ -90,3 +90,37 @@ Body
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
         }
+
+
+# Adding a custom domain name
+
+    - purchased domain name from GoDaddy.com
+    - Signup for cloudflare and copied cloudflare nameservers
+    - Replaced default goDaddy nameservers with cloudflare's
+    - Update Dns Records (in cloudflare)-
+                A         devnet.co.in                  50.17.117.92           Proxied                 Auto
+                CNAME      dcoyeamt---------            dcoy------             DNS only                Auto   
+                CNAME       ---------------             ------------           DNS only                 Auto
+                CNAME      www                          devnet.co.in           Proxied                 Auto
+                TXT        devnet.co.in                  "v=DMARC--            DNS only                 Auto     
+    - Update SSL for website
+
+
+
+#  Setup Amazon SES
+    - create a IAM user
+    - Give Acess to AmazonSESFullAccess
+    - Amazon SES: Create an Identity
+    - Verify your domain name
+    - Verify an email address
+    - Install AWS SDK - V3 - https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javascriptv3/example_code/ses/src/ses_sendemail.js    
+    - Setup SesClient
+    - Access Credentials should be created in IAm under SecurityCredentials Tab
+    - EC2 server and ses server should be same 
+    - Add the credentials to the env file
+    - Write code for SESClient
+    - Write code for Sending email address
+    - Make the email dynamic by passing more params to the run function
+    
+
+Z
