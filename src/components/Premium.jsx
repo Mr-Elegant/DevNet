@@ -5,20 +5,20 @@ import { BASE_URL } from "../utils/constants";
 const Premium = () => {
   const [isUserPremium, setIsUserPremium] = useState(false);
   
-  // useEffect(()=> {
-  //   verifyPremiumUser();
-  // }, [])
+  useEffect(()=> {
+    verifyPremiumUser();
+  }, [])
 
 
-  // const verifyPremiumUser = async () => {
-  //   const res = await axios.get(BASE_URL + "/premium/verify", {
-  //     withCredentials: true,
-  //   });
+  const verifyPremiumUser = async () => {
+    const res = await axios.get(BASE_URL + "/premium/verify", {
+      withCredentials: true,
+    });
 
-  //   if (res.data.isPremium) {
-  //     setIsUserPremium(true);
-  //   }
-  // }
+    if (res.data.isPremium) {
+      setIsUserPremium(true);
+    }
+  }
 
 
   const handleBuyClick = async (type) => {
@@ -45,6 +45,7 @@ const Premium = () => {
       theme: {
         color: "#FD3FCA",
       },
+      handler: verifyPremiumUser
 
     }
 
@@ -56,7 +57,7 @@ const Premium = () => {
   }
 
 
-  return (
+  return  isUserPremium ? ("You already a premium user") : (
     <div>
       <div className="w-full flex flex-col lg:flex-row gap-8 my-10 justify-center">
         {/* Free */}
