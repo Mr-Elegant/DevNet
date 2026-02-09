@@ -2,25 +2,38 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { BASE_URL } from "../utils/constants";
 
+
+// Premium component handles membership UI & payments
 const Premium = () => {
+  // State to track whether the user is already a premium member
   const [isUserPremium, setIsUserPremium] = useState(false);
   
+  // Runs once when the component mounts
+  // Used to check if the user already has premium access
   useEffect(()=> {
     verifyPremiumUser();
   }, [])
 
-
+  /**
+   * Verifies premium status of the logged-in user
+   * Calls backend premium verification endpoint
+   */
   const verifyPremiumUser = async () => {
     const res = await axios.get(BASE_URL + "/premium/verify", {
       withCredentials: true,
     });
 
+    // If backend confirms premium, update UI state
     if (res.data.isPremium) {
       setIsUserPremium(true);
     }
   }
 
 
+    /**
+   * Handles purchase button click
+   * @param {string} type - membership type (silver | gold)
+   */
   const handleBuyClick = async (type) => {
     const order = await axios.post(BASE_URL + "/payment/create", {
       membershipType: type,
@@ -28,8 +41,10 @@ const Premium = () => {
     {withCredentials: true}
     )
 
+    // Extract Razorpay configuration data
     const {amount, keyId, currency, notes, orderId} = order.data;
 
+    // Razorpay checkout configuration
     const options = {
       key: keyId,
       amount,
@@ -37,6 +52,7 @@ const Premium = () => {
       name: "DevNet",
       description: "Lets Connect with fellow devs",
       order_id: orderId,
+       // Autofill user details
       prefill: {
         name: notes.firstName + " " + notes.lastName,
         email: notes.emailId,
@@ -45,11 +61,12 @@ const Premium = () => {
       theme: {
         color: "#FD3FCA",
       },
+      // After successful payment, re-verify premium status
       handler: verifyPremiumUser
 
     }
 
-    
+     // Initialize Razorpay checkout  (razorpay ui initization on window)
     const rzp = new window.Razorpay(options);
     rzp.open()
 
@@ -58,6 +75,7 @@ const Premium = () => {
 
 
   return  isUserPremium ? ("You already a premium user") : (
+    // Membership cards UI
     <div>
       <div className="w-full flex flex-col lg:flex-row gap-8 my-10 justify-center">
         {/* Free */}

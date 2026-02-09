@@ -1,22 +1,40 @@
+// Redux hooks for state access and dispatch
 import { useDispatch, useSelector } from "react-redux";
+
 import axios from "axios";
 import { useEffect, useState } from "react";
+
+// Redux action to store connections
 import { addConnections } from "../utils/connectionSlice";
 import { Link } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
+
+// Animation library
 import AOS from "aos";
 import "aos/dist/aos.css";
 
+/**
+ * Connections component
+ * Displays all accepted user connections
+ */
 const Connections = () => {
+
+  // Retrieve connections from Redux store
   const connections = useSelector((store) => store.connections);
+  // Redux dispatcher
   const dispatch = useDispatch();
+  // Error state for API failures
   const [error, setError] = useState("");
 
+    /**
+   * Fetches user's connections from backend
+   */
   const fetchConnections = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/user/connections`, {
         withCredentials: true,
       });
+      // Store connections in Redux
       dispatch(addConnections(res.data.data));
     } catch (err) {
       console.error(err);
@@ -24,6 +42,10 @@ const Connections = () => {
     }
   };
 
+  /**
+   * Fetch connections on component mount
+   * Initialize AOS animations
+   */
   useEffect(() => {
     fetchConnections();
     AOS.init({ duration: 800, once: true });
@@ -101,7 +123,7 @@ const Connections = () => {
               </div>
             </div>
 
-            <Link to={`/chat/${_id}`} className="mt-4 sm:mt-0">
+            <Link to={`/chat/${_id}`} state={{user: connection}} className="mt-4 sm:mt-0">
               <button
                 className="text-white font-semibold py-2 px-4 rounded-lg transition-all duration-300"
                 style={{
