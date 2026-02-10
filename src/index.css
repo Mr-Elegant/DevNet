@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+/* OPTIONAL: limit / define themes */
+/* @config {
+  daisyui: {
+    themes: light, dark, cupcake, dracula;
+  }
+} */
+
+@plugin "daisyui" {
+  themes: all;
+}
+
 
 
 @keyframes spin {
@@ -9,7 +20,7 @@
   }
   to {
     transform: rotate(360deg);
-  }
+  }   
 }
 
 .animate-spin-slow {

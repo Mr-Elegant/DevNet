@@ -5,46 +5,43 @@ import { useEffect } from "react";
 import {addFeed} from "../utils/feedSlice";
 import UserCard from "./UserCard";
 
-
 const Feed = () => {
-  const feed = useSelector((store) => store.feed);  // Get feed from Redux store
-  // console.log(feed)
+  const feed = useSelector((store) => store.feed);
   const dispatch = useDispatch();
 
-  // API Call to Fetch Feed
   const getFeed = async()=> {
-    if(feed) return;  // If feed is already available, don’t fetch again
+    if(feed) return;
     try {
-      const res = await axios.get(BASE_URL+ "/feed", {withCredentials : true});  // Fetch feed
-      dispatch(addFeed(res?.data?.data));     // Dispatch action to store data
-      // console.log(res.data) ;
+      const res = await axios.get(BASE_URL+ "/feed", {withCredentials : true});
+      dispatch(addFeed(res?.data?.data));
     } catch (error) {
         console.log(error)
     }
   };
 
   useEffect(()=> {
-    getFeed();   // Call getFeed only once after mounting
+    getFeed();
   },[]);
 
-  if(!feed) {return};    // If feed is still null/undefined, render nothing
+  if(!feed) {return};
 
   if(feed.length <= 0){
-    // If the feed is empty, display a message.
     return (
-      <h1 className="flex justify-center my-10">No new Users found!</h1>
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-base-content/70">No new users found!</h1>
+          <p className="text-base-content/50 mt-2">Check back later for new connections</p>
+        </div>
+      </div>
     )
   }
 
-
-  // If feed is not empty, display the first user in the array using UserCard
   return (
     feed && (
       <div className="flex justify-center my-10">
         <UserCard user={feed[0]} />
       </div>
     )
-    
   )
 }
 

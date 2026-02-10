@@ -33,21 +33,15 @@ const Login = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <NavBar />
-      <div className="h-screen flex items-center justify-center px-4 m-[-6%]">
+      
+      <div className="flex-1 flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md p-8 sm:p-10 rounded-2xl border backdrop-blur-md bg-white/10 shadow-xl"
-          style={{
-            borderColor: "#FD3FCA",
-            boxShadow: `
-            0 0 0 1px rgba(253, 63, 202, 0.5),
-            0 4px 20px rgba(253, 63, 202, 0.2)
-          `,
-          }}
+          className="w-full max-w-md p-8 sm:p-10 rounded-2xl bg-base-200 shadow-xl border border-primary/20"
         >
           <form
             onSubmit={(e) => {
@@ -64,7 +58,7 @@ const Login = () => {
                     alt="logo"
                   />
                 </div>
-                <h1 className="text-2xl font-bold mt-2 text-white">
+                <h1 className="text-2xl font-bold mt-2 text-base-content">
                   Welcome Back
                 </h1>
                 <p className="text-base-content/60">Sign in to your account</p>
@@ -73,11 +67,11 @@ const Login = () => {
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Email</span>
+                <span className="label-text font-medium">Email</span>
               </label>
               <input
                 type="email"
-                className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
+                className="input input-bordered w-full"
                 placeholder="you@example.com"
                 value={emailId}
                 onChange={(e) => setEmailId(e.target.value)}
@@ -86,21 +80,19 @@ const Login = () => {
 
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">
-                  Password
-                </span>
+                <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
+                  className="input input-bordered w-full"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-300"
+                  className="absolute inset-y-0 right-3 flex items-center text-base-content/60 hover:text-base-content"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -108,15 +100,9 @@ const Login = () => {
               </div>
             </div>
 
-            {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+            {error && <p className="text-sm text-error mb-4">{error}</p>}
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full mb-4"
-              style={{
-                boxShadow: "0 0 10px rgba(253, 63, 202, 0.4)",
-              }}
-            >
+            <button type="submit" className="btn btn-primary w-full mb-4">
               Login
             </button>
 
@@ -131,7 +117,7 @@ const Login = () => {
       </div>
 
       <Footer />
-    </>
+    </div>
   );
 };
 

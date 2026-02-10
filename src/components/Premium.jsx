@@ -2,49 +2,34 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { BASE_URL } from "../utils/constants";
 
-
-// Premium component handles membership UI & payments
 const Premium = () => {
-  // State to track whether the user is already a premium member
   const [isUserPremium, setIsUserPremium] = useState(false);
-  
-  // Runs once when the component mounts
-  // Used to check if the user already has premium access
-  useEffect(()=> {
-    verifyPremiumUser();
-  }, [])
 
-  /**
-   * Verifies premium status of the logged-in user
-   * Calls backend premium verification endpoint
-   */
+  useEffect(() => {
+    verifyPremiumUser();
+  }, []);
+
   const verifyPremiumUser = async () => {
     const res = await axios.get(BASE_URL + "/premium/verify", {
       withCredentials: true,
     });
 
-    // If backend confirms premium, update UI state
     if (res.data.isPremium) {
       setIsUserPremium(true);
     }
-  }
+  };
 
-
-    /**
-   * Handles purchase button click
-   * @param {string} type - membership type (silver | gold)
-   */
   const handleBuyClick = async (type) => {
-    const order = await axios.post(BASE_URL + "/payment/create", {
-      membershipType: type,
-    },
-    {withCredentials: true}
-    )
+    const order = await axios.post(
+      BASE_URL + "/payment/create",
+      {
+        membershipType: type,
+      },
+      { withCredentials: true }
+    );
 
-    // Extract Razorpay configuration data
-    const {amount, keyId, currency, notes, orderId} = order.data;
+    const { amount, keyId, currency, notes, orderId } = order.data;
 
-    // Razorpay checkout configuration
     const options = {
       key: keyId,
       amount,
@@ -52,84 +37,152 @@ const Premium = () => {
       name: "DevNet",
       description: "Lets Connect with fellow devs",
       order_id: orderId,
-       // Autofill user details
       prefill: {
         name: notes.firstName + " " + notes.lastName,
         email: notes.emailId,
-        contact: "8572874207"
+        contact: "8572874207",
       },
       theme: {
         color: "#FD3FCA",
       },
-      // After successful payment, re-verify premium status
-      handler: verifyPremiumUser
+      handler: verifyPremiumUser,
+    };
 
-    }
-
-     // Initialize Razorpay checkout  (razorpay ui initization on window)
     const rzp = new window.Razorpay(options);
-    rzp.open()
+    rzp.open();
+  };
 
+  return isUserPremium ? (
+    <div className="flex justify-center items-center min-h-[60vh]">
+      <div className="card bg-base-200 shadow-xl max-w-md">
+        <div className="card-body text-center">
+          <h2 className="card-title text-2xl justify-center">
+            🎉 Premium Member
+          </h2>
+          <p className="text-base-content/70">
+            You already have premium access to all features!
+          </p>
+          <div className="badge badge-primary badge-lg mt-4">Active</div>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <div className="container mx-auto px-4 py-10">
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold text-base-content mb-2">
+          Choose Your Plan
+        </h1>
+        <p className="text-base-content/60">
+          Unlock premium features and connect with developers worldwide
+        </p>
+      </div>
 
-  }
-
-
-  return  isUserPremium ? ("You already a premium user") : (
-    // Membership cards UI
-    <div>
-      <div className="w-full flex flex-col lg:flex-row gap-8 my-10 justify-center">
-        {/* Free */}
-        <div className="card w-96 bg-[#0f111a] shadow-xl border border-[#2a2d3a] rounded-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_20px_#6f4aff33]">
+      <div className="flex flex-col lg:flex-row gap-8 justify-center items-center">
+        {/* Free Plan */}
+        <div className="card w-96 bg-base-200 shadow-xl border border-base-300 hover:scale-[1.02] transition-all duration-300">
           <div className="card-body">
-            <h2 className="card-title text-2xl font-bold">Free</h2>
-            <p className="text-4xl font-extrabold mt-2">₹0</p>
+            <h2 className="card-title text-2xl">Free</h2>
+            <div className="text-4xl font-bold my-4">₹0</div>
 
-            <ul className="mt-4 space-y-2 text-sm opacity-90">
-              <li>✔ Basic Access</li>
-              <li>✔ Limited Features</li>
-              <li>✖ No Analytics</li>
+            <ul className="space-y-2 text-sm text-base-content/70">
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Basic Access
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Limited Features
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-error">✗</span> No Analytics
+              </li>
             </ul>
 
-
-            <button className="btn btn-outline mt-6 w-full border-[#6f4aff] text-[#6f4aff] hover:bg-[#6f4aff] hover:text-white transition-all duration-300">Current Access</button>
+            <div className="card-actions mt-6">
+              <button className="btn btn-outline w-full" disabled>
+                Current Plan
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Silver */}
-        <div className="card w-96 bg-[#0f111a] shadow-xl border border-[#6f4aff] rounded-xl relative transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_#6f4aff66]">
-          <div className="badge absolute right-4 top-4 bg-[#6f4aff] border-0 text-white">POPULAR</div>
+        {/* Silver Plan */}
+        <div className="card w-96 bg-base-200 shadow-2xl border-2 border-primary hover:scale-[1.05] transition-all duration-300 relative">
+          <div className="badge badge-primary absolute right-4 top-4">
+            POPULAR
+          </div>
           <div className="card-body">
-            <h2 className="card-title text-2xl font-bold">Silver</h2>
-            <p className="text-4xl font-extrabold mt-2">₹199<span className="text-sm">/year</span></p>
+            <h2 className="card-title text-2xl">Silver</h2>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold">₹199</span>
+              <span className="text-base-content/60">/year</span>
+            </div>
 
-            <ul className="mt-4 space-y-2 text-sm opacity-90">
-              <li>✔ All Free Features</li>
-              <li>✔ Chat with other people</li>
-              <li>✔ 100 connection Requests per day</li>
-              <li>✔ Blue Tick</li>
-              <li>✔ 1 year</li>
+            <ul className="space-y-2 text-sm text-base-content/70 my-4">
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> All Free Features
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Chat with other people
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> 100 requests/day
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Blue Tick
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> 1 year access
+              </li>
             </ul>
 
-            <button onClick={()=> handleBuyClick("silver")} className="btn mt-6 w-full border-0 bg-[#6f4aff] hover:bg-[#5a39e6] transition-all duration-300 text-white">Get Silver</button>
+            <div className="card-actions mt-6">
+              <button
+                onClick={() => handleBuyClick("silver")}
+                className="btn btn-primary w-full"
+              >
+                Get Silver
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Gold */}
-        <div className="card w-96 bg-[#0f111a] shadow-xl border border-[#f5b000] rounded-xl transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_25px_#f5b00066]">
+        {/* Gold Plan */}
+        <div className="card w-96 bg-base-200 shadow-xl border-2 border-warning hover:scale-[1.02] transition-all duration-300">
           <div className="card-body">
-            <h2 className="card-title text-2xl font-bold">Gold</h2>
-            <p className="text-4xl font-extrabold mt-2">₹399<span className="text-sm">/year</span></p>
+            <h2 className="card-title text-2xl">Gold</h2>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold">₹399</span>
+              <span className="text-base-content/60">/year</span>
+            </div>
 
-            <ul className="mt-4 space-y-2 text-sm opacity-90">
-              <li>✔ All Silver Features</li>
-              <li>✔ Priority Support</li>
-              <li>✔ Inifinite connection Requests per day</li>
-              <li>✔ Unlimited Posting</li>
-              <li>✔ Lifetime</li>
-              <li>✔ Integrated AI Support</li>
+            <ul className="space-y-2 text-sm text-base-content/70 my-4">
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> All Silver Features
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Priority Support
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Unlimited requests
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Unlimited Posting
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> Lifetime access
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-success">✓</span> AI Support
+              </li>
             </ul>
 
-            <button onClick={()=> handleBuyClick("gold")} className="btn mt-6 w-full border-0 bg-[#f5b000] hover:bg-[#d99a00] transition-all duration-300 text-black font-semibold">Get Gold</button>
+            <div className="card-actions mt-6">
+              <button
+                onClick={() => handleBuyClick("gold")}
+                className="btn btn-warning w-full"
+              >
+                Get Gold
+              </button>
+            </div>
           </div>
         </div>
       </div>

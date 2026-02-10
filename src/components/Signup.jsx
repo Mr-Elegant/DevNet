@@ -6,10 +6,9 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
-import { useDispatch } from "react-redux"; // ✅ You may have missed this import
+import { useDispatch } from "react-redux";
 import { addUser } from "../utils/userSlice";
 
-// Toast Component
 const Toast = ({ message, type = "success", duration = 3000, onClose }) => {
   const [visible, setVisible] = useState(true);
 
@@ -34,7 +33,7 @@ const Toast = ({ message, type = "success", duration = 3000, onClose }) => {
 
 const Signup = () => {
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // ✅ Needed for Redux
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [emailId, setEmailId] = useState("");
   const [password, setPassword] = useState("");
@@ -63,7 +62,6 @@ const Signup = () => {
     }
 
     try {
-      // ✅ FIX: store response from axios
       const res = await axios.post(BASE_URL + "/signup", {
         firstName,
         lastName,
@@ -74,7 +72,6 @@ const Signup = () => {
       }, { withCredentials: true });
 
       dispatch(addUser(res.data.data));
-
       setToast({ show: true, message: "Signup successful!", type: "success" });
 
       setTimeout(() => {
@@ -82,28 +79,22 @@ const Signup = () => {
       }, 4000);
     } catch (err) {
       const msg = err?.response?.data?.message || "Signup failed.";
-      console.error("Signup Error:", err); // ✅ Optional debug
       setError(msg);
       setToast({ show: true, message: msg, type: "error" });
     }
   };
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <NavBar />
 
-      <div className="h-screen flex items-center justify-center px-4 my-[5%]">
+      <div className="flex-1 flex items-center justify-center px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 30, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-lg p-8 sm:p-10 rounded-2xl border backdrop-blur-md bg-white/10 shadow-xl"
-          style={{
-            borderColor: "#FD3FCA",
-            boxShadow: `0 0 0 1px rgba(253, 63, 202, 0.5), 0 4px 20px rgba(253, 63, 202, 0.2)`,
-          }}
+          className="w-full max-w-lg p-8 sm:p-10 rounded-2xl bg-base-200 shadow-xl border border-primary/20"
         >
-          {/* Toast Notification */}
           {toast.show && (
             <Toast
               message={toast.message}
@@ -127,70 +118,66 @@ const Signup = () => {
                     alt="logo"
                   />
                 </div>
-                <h1 className="text-2xl font-bold mt-2 text-white">Hii, Developer</h1>
+                <h1 className="text-2xl font-bold mt-2 text-base-content">Hii, Developer</h1>
                 <p className="text-base-content/60">Create your account</p>
               </div>
             </div>
 
-            {/* First Name */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">First Name</span>
+                <span className="label-text font-medium">First Name</span>
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder=""
+                className="input input-bordered w-full"
+                placeholder="John"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
               />
             </div>
 
-            {/* Last Name */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Last Name</span>
+                <span className="label-text font-medium">Last Name</span>
               </label>
               <input
                 type="text"
-                className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder=""
+                className="input input-bordered w-full"
+                placeholder="Doe"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
               />
             </div>
 
-            {/* Email */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Email</span>
+                <span className="label-text font-medium">Email</span>
               </label>
               <input
                 type="email"
-                className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
-                placeholder=""
+                className="input input-bordered w-full"
+                placeholder="you@example.com"
                 value={emailId}
                 onChange={(e) => setEmailId(e.target.value)}
               />
             </div>
 
-            {/* Password */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Password</span>
+                <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
+                  className="input input-bordered w-full"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-300"
+                  className="absolute inset-y-0 right-3 flex items-center text-base-content/60 hover:text-base-content"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -198,22 +185,21 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Confirm Password */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Confirm Password</span>
+                <span className="label-text font-medium">Confirm Password</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
+                  className="input input-bordered w-full"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-300"
+                  className="absolute inset-y-0 right-3 flex items-center text-base-content/60 hover:text-base-content"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -221,27 +207,22 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Age */}
             <div className="form-control mb-4">
               <label className="label">
-                <span className="label-text font-medium text-white">Age</span>
+                <span className="label-text font-medium">Age</span>
               </label>
               <input
                 type="number"
-                className="input input-bordered w-full bg-white/20 text-white placeholder:text-gray-300"
+                className="input input-bordered w-full"
                 placeholder="18"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
               />
             </div>
 
-            {error && <p className="text-sm text-red-400 mb-4">{error}</p>}
+            {error && <p className="text-sm text-error mb-4">{error}</p>}
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full mb-4"
-              style={{ boxShadow: "0 0 10px rgba(253, 63, 202, 0.4)" }}
-            >
+            <button type="submit" className="btn btn-primary w-full mb-4">
               Signup
             </button>
 
@@ -256,7 +237,7 @@ const Signup = () => {
       </div>
 
       <Footer />
-    </>
+    </div>
   );
 };
 
