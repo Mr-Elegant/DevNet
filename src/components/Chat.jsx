@@ -22,6 +22,7 @@ const Chat = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
+  const [isSocketReady, setIsSocketReady] = useState(false);
 
   const user = useSelector((store) => store.user);
   const userId = user?._id;
@@ -33,56 +34,114 @@ const Chat = () => {
     state?.user || connections?.find((c) => c._id === targetUserId);
 
   const fetchChat = async () => {
-    const res = await axios.get(`${BASE_URL}/chat/${targetUserId}`, {
-      withCredentials: true,
-    });
+    try {
+      const res = await axios.get(`${BASE_URL}/chat/${targetUserId}`, {
+        withCredentials: true,
+      });
 
-    const { chat, roomId } = res.data;
+      const { chat, roomId } = res.data;
 
-    setChatId(chat._id);
-    setRoomId(roomId);
+      setChatId(chat._id);
+      setRoomId(roomId);
 
-    const normalized = chat.messages.map((m) => ({
-      _id: m._id,
-      senderId: typeof m.senderId === "object" ? m.senderId._id : m.senderId,
-      firstName: m.senderId.firstName,
-      lastName: m.senderId.lastName,
-      text: m.text,
-      createdAt: m.createdAt,
-      status: m.status,
-    }));
+      const normalized = chat.messages.map((m) => ({
+        _id: m._id.toString(),
+        senderId: typeof m.senderId === "object" ? m.senderId._id : m.senderId,
+        firstName: m.senderId?.firstName || "Unknown",
+        lastName: m.senderId?.lastName || "",
+        text: m.text,
+        createdAt: m.createdAt,
+        status: m.status,
+      }));
 
-    setMessages(normalized);
+      setMessages(normalized);
+      console.log("Chat fetched, messages:", normalized);
+    } catch (error) {
+      console.error("Failed to fetch chat:", error);
+    }
   };
 
   useEffect(() => {
     fetchChat();
   }, [targetUserId]);
 
+  // Socket setup
   useEffect(() => {
     if (!roomId || !chatId) return;
 
+    console.log("🔌 Setting up socket connection...");
     socketRef.current = CreateSocketConnection();
-    socketRef.current.emit("joinChat", { roomId });
+
+    socketRef.current.on("connect", () => {
+      console.log("✅ Socket connected:", socketRef.current.id);
+      setIsSocketReady(true);
+
+      socketRef.current.emit("joinChat", { roomId });
+      console.log("🏠 Joined room:", roomId);
+
+      socketRef.current.emit("messagesDelivered", {
+        chatId,
+        roomId,
+        userId,
+      });
+      console.log("📨 Emitted messagesDelivered");
+    });
 
     socketRef.current.on("messageReceived", (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      console.log("📩 Message received:", msg);
+      
+      const normalizedMsg = {
+        _id: msg._id.toString(),
+        senderId: msg.senderId,
+        firstName: msg.firstName,
+        lastName: msg.lastName,
+        text: msg.text,
+        createdAt: msg.createdAt,
+        status: msg.status,
+      };
+      
+      setMessages((prev) => [...prev, normalizedMsg]);
 
       if (msg.senderId !== userId) {
         socketRef.current.emit("messageSeen", {
           chatId,
           roomId,
-          messageId: msg._id,
+          messageId: msg._id.toString(),
         });
 
         setUnreadCount((count) => (isAtBottomRef.current ? 0 : count + 1));
       }
     });
 
+    // ✅ FIXED: Update message status handler
     socketRef.current.on("updateMessageStatus", ({ messageId, status }) => {
-      setMessages((prev) =>
-        prev.map((m) => (m._id === messageId ? { ...m, status } : m))
-      );
+      console.log(`📩 Received updateMessageStatus: ${messageId} -> ${status}`);
+      
+      const msgIdStr = messageId.toString();
+      
+      setMessages((prevMessages) => {
+        console.log("📋 Before:", prevMessages.map(m => ({ id: m._id.slice(-6), status: m.status })));
+        
+        // Create completely new objects to force React re-render
+        const updatedMessages = prevMessages.map((msg) => {
+          if (msg._id === msgIdStr) {
+            console.log(`✅ MATCH! ${msg._id.slice(-6)}: "${msg.status}" -> "${status}"`);
+            return {
+              _id: msg._id,
+              senderId: msg.senderId,
+              firstName: msg.firstName,
+              lastName: msg.lastName,
+              text: msg.text,
+              createdAt: msg.createdAt,
+              status: status, // New status
+            };
+          }
+          return { ...msg };
+        });
+        
+        console.log("📋 After:", updatedMessages.map(m => ({ id: m._id.slice(-6), status: m.status })));
+        return updatedMessages;
+      });
     });
 
     socketRef.current.on("userTyping", ({ firstName }) => {
@@ -95,11 +154,19 @@ const Chat = () => {
       setTypingUser("");
     });
 
+    socketRef.current.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+      setIsSocketReady(false);
+    });
+
     return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
+      if (socketRef.current) {
+        console.log("🧹 Cleaning up socket connection");
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [roomId, chatId]);
+  }, [roomId, chatId, userId]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -127,7 +194,12 @@ const Chat = () => {
   }, [messages, isAtBottom]);
 
   const sendMessage = () => {
-    if (!newMessage.trim() || !socketRef.current) return;
+    if (!newMessage.trim() || !socketRef.current || !isSocketReady) {
+      console.log("❌ Cannot send - socket not ready or message empty");
+      return;
+    }
+
+    console.log("📤 Sending message:", newMessage);
 
     socketRef.current.emit("sendMessage", {
       chatId,
@@ -185,69 +257,74 @@ const Chat = () => {
                 ? `${targetUser.firstName} ${targetUser.lastName || ""}`
                 : "Chat"}
             </h2>
+            <div className={`badge badge-xs ${isSocketReady ? 'badge-success' : 'badge-error'}`}>
+              {isSocketReady ? '●' : '○'}
+            </div>
           </div>
         </div>
 
-        {/* Messages Container */}
+{/* Messages Container */}
+<div
+  ref={messagesContainerRef}
+  className="flex-1 overflow-y-auto p-4 space-y-4"
+>
+  {messages.map((msg, index) => {
+    const showDate =
+      index === 0 ||
+      formatDateLabel(msg.createdAt) !==
+        formatDateLabel(messages[index - 1].createdAt);
+
+    return (
+      <div 
+        key={`${msg._id}-${msg.status}`}  // ✅ CRITICAL FIX: Include status in key
+      >
+        {showDate && (
+          <div className="divider text-xs opacity-60">
+            {formatDateLabel(msg.createdAt)}
+          </div>
+        )}
+
         <div
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4"
+          className={
+            "chat " +
+            (msg.senderId === userId ? "chat-end" : "chat-start")
+          }
         >
-          {messages.map((msg, index) => {
-            const showDate =
-              index === 0 ||
-              formatDateLabel(msg.createdAt) !==
-                formatDateLabel(messages[index - 1].createdAt);
+          <div className="chat-header text-xs opacity-60 mb-1">
+            {msg.firstName}
+            <time className="ml-2">
+              {new Date(msg.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </time>
+          </div>
 
-            return (
-              <div key={msg._id}>
-                {showDate && (
-                  <div className="divider text-xs opacity-60">
-                    {formatDateLabel(msg.createdAt)}
-                  </div>
-                )}
+          <div
+            className={`chat-bubble ${
+              msg.senderId === userId
+                ? "chat-bubble-primary"
+                : "chat-bubble-secondary"
+            }`}
+          >
+            {msg.text}
+          </div>
 
-                <div
-                  className={
-                    "chat " +
-                    (msg.senderId === userId ? "chat-end" : "chat-start")
-                  }
-                >
-                  <div className="chat-header text-xs opacity-60 mb-1">
-                    {msg.firstName}
-                    <time className="ml-2">
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                  </div>
-
-                  <div
-                    className={`chat-bubble ${
-                      msg.senderId === userId
-                        ? "chat-bubble-primary"
-                        : "chat-bubble-secondary"
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-
-                  {msg.senderId === userId && (
-                    <div className="chat-footer opacity-50 text-xs mt-1">
-                      {msg.status === "sent" && "✓"}
-                      {msg.status === "delivered" && "✓✓"}
-                      {msg.status === "seen" && (
-                        <span className="text-primary">Read</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          <div ref={bottomRef} />
+          {msg.senderId === userId && (
+            <div className="chat-footer opacity-50 text-xs mt-1">
+              {msg.status === "sent" && "✓"}
+              {msg.status === "delivered" && "✓✓"}
+              {msg.status === "seen" && (
+                <span className="text-primary">✓✓ Read</span>
+              )}
+            </div>
+          )}
         </div>
+      </div>
+    );
+  })}
+  <div ref={bottomRef} />
+</div>
 
         {/* Scroll to Bottom Button */}
         {!isAtBottom && (
@@ -279,24 +356,31 @@ const Chat = () => {
               onChange={(e) => {
                 setNewMessage(e.target.value);
 
-                socketRef.current.emit("typing", {
-                  roomId,
-                  firstName: user.firstName,
-                });
+                if (socketRef.current && isSocketReady) {
+                  socketRef.current.emit("typing", {
+                    roomId,
+                    firstName: user.firstName,
+                  });
 
-                if (typingTimeoutRef.current)
-                  clearTimeout(typingTimeoutRef.current);
+                  if (typingTimeoutRef.current)
+                    clearTimeout(typingTimeoutRef.current);
 
-                typingTimeoutRef.current = setTimeout(() => {
-                  socketRef.current.emit("stopTyping", { roomId });
-                }, 1500);
+                  typingTimeoutRef.current = setTimeout(() => {
+                    socketRef.current.emit("stopTyping", { roomId });
+                  }, 1500);
+                }
               }}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               className="input input-bordered input-sm flex-1"
               placeholder="Type a message..."
+              disabled={!isSocketReady}
             />
 
-            <button onClick={sendMessage} className="btn btn-primary btn-sm">
+            <button 
+              onClick={sendMessage} 
+              className="btn btn-primary btn-sm"
+              disabled={!isSocketReady || !newMessage.trim()}
+            >
               Send
             </button>
           </div>
@@ -307,3 +391,14 @@ const Chat = () => {
 };
 
 export default Chat;
+
+// ## 🧪 **What to Look For Now**
+
+// After this fix, in the console you should see:
+
+// **Sender's console:**
+// ```
+// 📩 Received updateMessageStatus: 698b01040... -> delivered
+// 📋 Before: [{ id: '040...', status: 'sent' }]
+// ✅ MATCH! 040...: "sent" -> "delivered"
+// 📋 After: [{ id: '040...', status: 'delivered' }]
