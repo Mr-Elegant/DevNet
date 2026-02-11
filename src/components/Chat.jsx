@@ -76,15 +76,19 @@ const Chat = () => {
       console.log("✅ Socket connected:", socketRef.current.id);
       setIsSocketReady(true);
 
+      // 1. SILENT REFRESH: Fetch chat immediately on connect/reconnect.
+      fetchChat();
+
       socketRef.current.emit("joinChat", { roomId });
       console.log("🏠 Joined room:", roomId);
 
-      socketRef.current.emit("messagesDelivered", {
+      // 2. UPGRADE TO SEEN: The user is looking at the chat, so mark as Read.
+      socketRef.current.emit("markMessagesSeen", {
         chatId,
         roomId,
         userId,
       });
-      console.log("📨 Emitted messagesDelivered");
+      console.log("📨 Emitted markMessagesSeen");
     });
 
     socketRef.current.on("messageReceived", (msg) => {
@@ -113,19 +117,15 @@ const Chat = () => {
       }
     });
 
-    // ✅ FIXED: Update message status handler
     socketRef.current.on("updateMessageStatus", ({ messageId, status }) => {
       console.log(`📩 Received updateMessageStatus: ${messageId} -> ${status}`);
       
       const msgIdStr = messageId.toString();
       
       setMessages((prevMessages) => {
-        console.log("📋 Before:", prevMessages.map(m => ({ id: m._id.slice(-6), status: m.status })));
-        
         // Create completely new objects to force React re-render
         const updatedMessages = prevMessages.map((msg) => {
           if (msg._id === msgIdStr) {
-            console.log(`✅ MATCH! ${msg._id.slice(-6)}: "${msg.status}" -> "${status}"`);
             return {
               _id: msg._id,
               senderId: msg.senderId,
@@ -139,7 +139,6 @@ const Chat = () => {
           return { ...msg };
         });
         
-        console.log("📋 After:", updatedMessages.map(m => ({ id: m._id.slice(-6), status: m.status })));
         return updatedMessages;
       });
     });
@@ -263,68 +262,68 @@ const Chat = () => {
           </div>
         </div>
 
-{/* Messages Container */}
-<div
-  ref={messagesContainerRef}
-  className="flex-1 overflow-y-auto p-4 space-y-4"
->
-  {messages.map((msg, index) => {
-    const showDate =
-      index === 0 ||
-      formatDateLabel(msg.createdAt) !==
-        formatDateLabel(messages[index - 1].createdAt);
-
-    return (
-      <div 
-        key={`${msg._id}-${msg.status}`}  // ✅ CRITICAL FIX: Include status in key
-      >
-        {showDate && (
-          <div className="divider text-xs opacity-60">
-            {formatDateLabel(msg.createdAt)}
-          </div>
-        )}
-
+        {/* Messages Container */}
         <div
-          className={
-            "chat " +
-            (msg.senderId === userId ? "chat-end" : "chat-start")
-          }
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-4 space-y-4"
         >
-          <div className="chat-header text-xs opacity-60 mb-1">
-            {msg.firstName}
-            <time className="ml-2">
-              {new Date(msg.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </time>
-          </div>
+          {messages.map((msg, index) => {
+            const showDate =
+              index === 0 ||
+              formatDateLabel(msg.createdAt) !==
+                formatDateLabel(messages[index - 1].createdAt);
 
-          <div
-            className={`chat-bubble ${
-              msg.senderId === userId
-                ? "chat-bubble-primary"
-                : "chat-bubble-secondary"
-            }`}
-          >
-            {msg.text}
-          </div>
+            return (
+              <div 
+                key={`${msg._id}-${msg.status}`} 
+              >
+                {showDate && (
+                  <div className="divider text-xs opacity-60">
+                    {formatDateLabel(msg.createdAt)}
+                  </div>
+                )}
 
-          {msg.senderId === userId && (
-            <div className="chat-footer opacity-50 text-xs mt-1">
-              {msg.status === "sent" && "✓"}
-              {msg.status === "delivered" && "✓✓"}
-              {msg.status === "seen" && (
-                <span className="text-primary">✓✓ Read</span>
-              )}
-            </div>
-          )}
+                <div
+                  className={
+                    "chat " +
+                    (msg.senderId === userId ? "chat-end" : "chat-start")
+                  }
+                >
+                  <div className="chat-header text-xs opacity-60 mb-1">
+                    {msg.firstName}
+                    <time className="ml-2">
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </div>
+
+                  <div
+                    className={`chat-bubble ${
+                      msg.senderId === userId
+                        ? "chat-bubble-primary"
+                        : "chat-bubble-secondary"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+
+                  {msg.senderId === userId && (
+                    <div className="chat-footer opacity-50 text-xs mt-1">
+                      {msg.status === "sent" && "✓"}
+                      {msg.status === "delivered" && "✓✓"}
+                      {msg.status === "seen" && (
+                        <span className="text-primary font-bold">✓✓ Read</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
         </div>
-      </div>
-    );
-  })}
-  <div ref={bottomRef} />
-</div>
 
         {/* Scroll to Bottom Button */}
         {!isAtBottom && (
@@ -391,14 +390,3 @@ const Chat = () => {
 };
 
 export default Chat;
-
-// ## 🧪 **What to Look For Now**
-
-// After this fix, in the console you should see:
-
-// **Sender's console:**
-// ```
-// 📩 Received updateMessageStatus: 698b01040... -> delivered
-// 📋 Before: [{ id: '040...', status: 'sent' }]
-// ✅ MATCH! 040...: "sent" -> "delivered"
-// 📋 After: [{ id: '040...', status: 'delivered' }]
