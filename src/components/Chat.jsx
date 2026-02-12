@@ -14,6 +14,7 @@ const Chat = () => {
   const typingTimeoutRef = useRef(null);
   const isAtBottomRef = useRef(true);
 
+  const [isOnline, setIsOnline] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [chatId, setChatId] = useState(null);
@@ -23,6 +24,7 @@ const Chat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
   const [isSocketReady, setIsSocketReady] = useState(false);
+
 
   const user = useSelector((store) => store.user);
   const userId = user?._id;
@@ -75,11 +77,16 @@ const Chat = () => {
     socketRef.current.on("connect", () => {
       console.log("✅ Socket connected:", socketRef.current.id);
       setIsSocketReady(true);
-
       // 1. SILENT REFRESH: Fetch chat immediately on connect/reconnect.
       fetchChat();
 
+      // ✅ Register this user as online globally
+      socketRef.current.emit("registerUser", userId);
+      // ✅  Ask the server if the person we are chatting with is online
+      socketRef.current.emit("checkOnlineStatus", targetUserId);
+      
       socketRef.current.emit("joinChat", { roomId });
+      socketRef.current.emit("markMessagesSeen", {chatId, roomId, userId});
       console.log("🏠 Joined room:", roomId);
 
       // 2. UPGRADE TO SEEN: The user is looking at the chat, so mark as Read.
@@ -90,6 +97,19 @@ const Chat = () => {
       });
       console.log("📨 Emitted markMessagesSeen");
     });
+
+    // ✅ Listeners for Online Status
+    socketRef.current.on("onlineStatus", ({userId: id, isOnline: status}) => {
+      if(id === targetUserId) setIsOnline(status);
+    });
+
+    socketRef.current.on("userOnline", (id) => {
+      if(id === targetUserId) setIsOnline(true);
+    })
+    socketRef.current.on("userOffline", (id) => {
+      if(id === targetUserId) setIsOnline(false);
+    })
+    
 
     socketRef.current.on("messageReceived", (msg) => {
       console.log("📩 Message received:", msg);
@@ -245,17 +265,24 @@ const Chat = () => {
         <div className="p-3 border-b border-base-300">
           <div className="flex items-center gap-3">
             {targetUser?.photoUrl && (
-              <div className="avatar">
-                <div className="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
+              // ✅ Dynamically add daisyUI 'online' class to the avatar
+              <div className={`avatar ${isOnline ? 'online' : ''}`}>
+                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
                   <img src={targetUser.photoUrl} alt={targetUser.firstName} />
                 </div>
               </div>
             )}
-            <h2 className="text-base font-semibold">
+            <h2 className="text-base font-semibold leading-tight">
               {targetUser
                 ? `${targetUser.firstName} ${targetUser.lastName || ""}`
                 : "Chat"}
             </h2>
+            {/* ✅ Text indicator under the name */}
+            <div className="text-xs mt-0.5">
+              {isOnline ? (
+                <span className="text-success font-medium">Online</span> 
+              ) : <span className="opacity-60">Offline</span>}
+            </div>
             <div className={`badge badge-xs ${isSocketReady ? 'badge-success' : 'badge-error'}`}>
               {isSocketReady ? '●' : '○'}
             </div>
