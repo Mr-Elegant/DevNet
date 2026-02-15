@@ -3,18 +3,18 @@ import { useSelector } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { CreateSocketConnection } from "../utils/socket";
+import { useSocket } from "../utils/SocketContext"; // 👈 Import the global socket hook
 
 const Chat = () => {
   const { targetUserId } = useParams();
+  const socket = useSocket(); // 👈 Use the global socket instance
 
-  const socketRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isAtBottomRef = useRef(true);
+  const processedMessagesRef = useRef(new Set()); // 👈 Track processed message IDs to prevent duplicates
 
-  const [isOnline, setIsOnline] = useState(false);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [chatId, setChatId] = useState(null);
@@ -23,8 +23,7 @@ const Chat = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
-  const [isSocketReady, setIsSocketReady] = useState(false);
-
+  const [isOnline, setIsOnline] = useState(false); // 👈 New State for Online Status
 
   const user = useSelector((store) => store.user);
   const userId = user?._id;
@@ -35,6 +34,7 @@ const Chat = () => {
   const targetUser =
     state?.user || connections?.find((c) => c._id === targetUserId);
 
+  // 1. Fetch Chat History
   const fetchChat = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/chat/${targetUserId}`, {
@@ -57,7 +57,11 @@ const Chat = () => {
       }));
 
       setMessages(normalized);
-      console.log("Chat fetched, messages:", normalized);
+
+      //  track existing messages to prevent duplicates from socket events (Track existing IDs so we don't duplicate them)
+      processedMessagesRef.current = new Set(normalized.map((m) => m._id.toString()));
+
+
     } catch (error) {
       console.error("Failed to fetch chat:", error);
     }
@@ -67,53 +71,32 @@ const Chat = () => {
     fetchChat();
   }, [targetUserId]);
 
-  // Socket setup
+  // 2. Handle Socket Events
   useEffect(() => {
-    if (!roomId || !chatId) return;
+    if (!socket || !roomId || !chatId) return;
 
-    console.log("🔌 Setting up socket connection...");
-    socketRef.current = CreateSocketConnection();
+    console.log("🔌 Attaching Chat Listeners to global socket");
 
-    socketRef.current.on("connect", () => {
-      console.log("✅ Socket connected:", socketRef.current.id);
-      setIsSocketReady(true);
-      // 1. SILENT REFRESH: Fetch chat immediately on connect/reconnect.
-      fetchChat();
+    // -- EMIT JOIN EVENTS --
+    socket.emit("joinChat", { roomId });
+    socket.emit("markMessagesSeen", { chatId, roomId, userId });
+    socket.emit("checkOnlineStatus", targetUserId); // 👈 Ask if they are online
 
-      // ✅ Register this user as online globally
-      socketRef.current.emit("registerUser", userId);
-      // ✅  Ask the server if the person we are chatting with is online
-      socketRef.current.emit("checkOnlineStatus", targetUserId);
-      
-      socketRef.current.emit("joinChat", { roomId });
-      socketRef.current.emit("markMessagesSeen", {chatId, roomId, userId});
-      console.log("🏠 Joined room:", roomId);
 
-      // 2. UPGRADE TO SEEN: The user is looking at the chat, so mark as Read.
-      socketRef.current.emit("markMessagesSeen", {
-        chatId,
-        roomId,
-        userId,
-      });
-      console.log("📨 Emitted markMessagesSeen");
-    });
-
-    // ✅ Listeners for Online Status
-    socketRef.current.on("onlineStatus", ({userId: id, isOnline: status}) => {
-      if(id === targetUserId) setIsOnline(status);
-    });
-
-    socketRef.current.on("userOnline", (id) => {
-      if(id === targetUserId) setIsOnline(true);
-    })
-    socketRef.current.on("userOffline", (id) => {
-      if(id === targetUserId) setIsOnline(false);
-    })
+    // -- DEFINE HANDLERS --
     
+    // Handle incoming messages
+    const handleMessageReceived = (msg) => {
 
-    socketRef.current.on("messageReceived", (msg) => {
-      console.log("📩 Message received:", msg);
-      
+      const msgIdStr = msg._id.toString();
+
+      // 👈 ADD THIS BLOCKER: If we already rendered this ID, ignore it!
+      if (processedMessagesRef.current.has(msgIdStr)) {
+        console.log("Duplicate message received, ignoring:", msgIdStr);
+        return;
+      }
+      processedMessagesRef.current.add(msgIdStr); // Mark this ID as processed
+
       const normalizedMsg = {
         _id: msg._id.toString(),
         senderId: msg.senderId,
@@ -123,79 +106,94 @@ const Chat = () => {
         createdAt: msg.createdAt,
         status: msg.status,
       };
-      
-      setMessages((prev) => [...prev, normalizedMsg]);
 
-      if (msg.senderId !== userId) {
-        socketRef.current.emit("messageSeen", {
-          chatId,
-          roomId,
-          messageId: msg._id.toString(),
-        });
+      // Notes:   
+          //    Filter by ID: msg.senderId === targetUserId checks if the incoming message is actually from the person currently on your screen.If it's from someone else, it won't be added to this chat's message list at all. This is crucial for preventing "ghost messages" from appearing in the wrong chat window.
+          // Prevents Ghost Reads: If you are chatting with "Alice" and "Bob" sends a message, "Bob's" message will be ignored by this specific Chat component instance. It won't be marked as seen, and it won't weirdly appear in Alice's chat log.
 
-        setUnreadCount((count) => (isAtBottomRef.current ? 0 : count + 1));
-      }
-    });
-
-    socketRef.current.on("updateMessageStatus", ({ messageId, status }) => {
-      console.log(`📩 Received updateMessageStatus: ${messageId} -> ${status}`);
-      
-      const msgIdStr = messageId.toString();
-      
-      setMessages((prevMessages) => {
-        // Create completely new objects to force React re-render
-        const updatedMessages = prevMessages.map((msg) => {
-          if (msg._id === msgIdStr) {
-            return {
-              _id: msg._id,
-              senderId: msg.senderId,
-              firstName: msg.firstName,
-              lastName: msg.lastName,
-              text: msg.text,
-              createdAt: msg.createdAt,
-              status: status, // New status
-            };
-          }
-          return { ...msg };
-        });
+      // 1. Only add message to UI if it belongs to THIS chat
+      // (This prevents messages from User B appearing in User A's chat window)
+      if (msg.senderId === targetUserId || msg.senderId === userId) {
+        setMessages((prev) => [...prev, normalizedMsg]);
         
-        return updatedMessages;
-      });
-    });
-
-    socketRef.current.on("userTyping", ({ firstName }) => {
-      setIsTyping(true);
-      setTypingUser(firstName);
-    });
-
-    socketRef.current.on("userStopTyping", () => {
-      setIsTyping(false);
-      setTypingUser("");
-    });
-
-    socketRef.current.on("disconnect", () => {
-      console.log("❌ Socket disconnected");
-      setIsSocketReady(false);
-    });
-
-    return () => {
-      if (socketRef.current) {
-        console.log("🧹 Cleaning up socket connection");
-        socketRef.current.disconnect();
-        socketRef.current = null;
+        // 2. Only mark as seen if it comes from the user we are CURRENTLY looking at
+        if (msg.senderId === targetUserId) {
+          socket.emit("messageSeen", {
+            chatId,
+            roomId,
+            messageId: msgIdStr,
+          });
+          setUnreadCount((count) => (isAtBottomRef.current ? 0 : count + 1));
+        }
       }
     };
-  }, [roomId, chatId, userId]);
 
+    // Handle Ticks (Sent -> Delivered -> Seen)
+    const handleUpdateMessageStatus = ({ messageId, status }) => {
+      setMessages((prev) => 
+        prev.map((msg) => {
+          if (msg._id === messageId.toString()) {
+            return { ...msg, status }; // Update status immutably
+          }
+          return msg;
+        })
+      );
+    };
+
+    // Handle Typing
+    const handleTyping = ({ firstName }) => {
+      setIsTyping(true);
+      setTypingUser(firstName);
+    };
+
+    const handleStopTyping = () => {
+      setIsTyping(false);
+      setTypingUser("");
+    };
+
+    // Handle Online Status
+    const handleOnlineStatus = ({ userId: id, isOnline: status }) => {
+      if (id === targetUserId) setIsOnline(status);
+    };
+
+    const handleUserOnline = (id) => {
+      if (id === targetUserId) setIsOnline(true);
+    };
+
+    const handleUserOffline = (id) => {
+      if (id === targetUserId) setIsOnline(false);
+    };
+
+    // -- ATTACH LISTENERS --
+    socket.on("messageReceived", handleMessageReceived);
+    socket.on("updateMessageStatus", handleUpdateMessageStatus);
+    socket.on("userTyping", handleTyping);
+    socket.on("userStopTyping", handleStopTyping);
+    socket.on("onlineStatus", handleOnlineStatus);
+    socket.on("userOnline", handleUserOnline);
+    socket.on("userOffline", handleUserOffline);
+
+    // -- CLEANUP --
+    return () => {
+      // ⚠️ IMPORTANT: Remove listeners but DO NOT disconnect the socket
+      socket.off("messageReceived", handleMessageReceived);
+      socket.off("updateMessageStatus", handleUpdateMessageStatus);
+      socket.off("userTyping", handleTyping);
+      socket.off("userStopTyping", handleStopTyping);
+      socket.off("onlineStatus", handleOnlineStatus);
+      socket.off("userOnline", handleUserOnline);
+      socket.off("userOffline", handleUserOffline);
+    };
+  }, [socket, roomId, chatId, userId, targetUserId]);
+
+  // 3. Scroll & UI Logic
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const threshold = 100;
-
-      const atBottom = scrollHeight - scrollTop - clientHeight < threshold;
+      const atBottom = scrollHeight - scrollTop - clientHeight < 100;
 
       setIsAtBottom(atBottom);
       isAtBottomRef.current = atBottom;
@@ -208,19 +206,15 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    if (!isAtBottom) return;
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (isAtBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isAtBottom]);
 
   const sendMessage = () => {
-    if (!newMessage.trim() || !socketRef.current || !isSocketReady) {
-      console.log("❌ Cannot send - socket not ready or message empty");
-      return;
-    }
+    if (!newMessage.trim() || !socket) return;
 
-    console.log("📤 Sending message:", newMessage);
-
-    socketRef.current.emit("sendMessage", {
+    socket.emit("sendMessage", {
       chatId,
       roomId,
       userId,
@@ -229,33 +223,29 @@ const Chat = () => {
       text: newMessage,
     });
 
-    socketRef.current.emit("stopTyping", { roomId });
+    socket.emit("stopTyping", { roomId });
     setNewMessage("");
+  };
+
+  const handleTypingInput = (e) => {
+    setNewMessage(e.target.value);
+
+    if (socket) {
+      socket.emit("typing", { roomId, firstName: user.firstName });
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("stopTyping", { roomId });
+      }, 1500);
+    }
   };
 
   const formatDateLabel = (date) => {
     const d = new Date(date);
     const today = new Date();
-    const todayOnly = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-
-    const msgOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-    const yesterday = new Date(todayOnly);
-    yesterday.setDate(todayOnly.getDate() - 1);
-
-    if (msgOnly.getTime() === todayOnly.getTime()) return "Today";
-    if (msgOnly.getTime() === yesterday.getTime()) return "Yesterday";
-
+    if (d.toDateString() === today.toDateString()) return "Today";
     return d.toLocaleDateString();
-  };
-
-  const scrollToBottom = () => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    setUnreadCount(0);
   };
 
   return (
@@ -265,26 +255,34 @@ const Chat = () => {
         <div className="p-3 border-b border-base-300">
           <div className="flex items-center gap-3">
             {targetUser?.photoUrl && (
-              // ✅ Dynamically add daisyUI 'online' class to the avatar
+              // 👇 Dynamic "online" class from daisyUI
               <div className={`avatar ${isOnline ? 'online' : ''}`}>
                 <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
                   <img src={targetUser.photoUrl} alt={targetUser.firstName} />
                 </div>
               </div>
             )}
-            <h2 className="text-base font-semibold leading-tight">
-              {targetUser
-                ? `${targetUser.firstName} ${targetUser.lastName || ""}`
-                : "Chat"}
-            </h2>
-            {/* ✅ Text indicator under the name */}
-            <div className="text-xs mt-0.5">
-              {isOnline ? (
-                <span className="text-success font-medium">Online</span> 
-              ) : <span className="opacity-60">Offline</span>}
+            <div>
+              <h2 className="text-base font-semibold leading-tight">
+                {targetUser
+                  ? `${targetUser.firstName} ${targetUser.lastName || ""}`
+                  : "Chat"}
+              </h2>
+              {/* 👇 Text Indicator */}
+              <div className="text-xs mt-0.5">
+                {isOnline ? (
+                  <span className="text-success font-medium">Online</span>
+                ) : (
+                  <span className="opacity-60">Offline</span>
+                )}
+              </div>
             </div>
-            <div className={`badge badge-xs ${isSocketReady ? 'badge-success' : 'badge-error'}`}>
-              {isSocketReady ? '●' : '○'}
+            
+            {/* Socket Status Indicator */}
+            <div className="ml-auto">
+               <div className={`badge badge-xs ${socket?.connected ? 'badge-success' : 'badge-error'}`}>
+                 {socket?.connected ? '●' : '○'}
+               </div>
             </div>
           </div>
         </div>
@@ -301,21 +299,14 @@ const Chat = () => {
                 formatDateLabel(messages[index - 1].createdAt);
 
             return (
-              <div 
-                key={`${msg._id}-${msg.status}`} 
-              >
+              <div key={`${msg._id}-${msg.status}`}>
                 {showDate && (
                   <div className="divider text-xs opacity-60">
                     {formatDateLabel(msg.createdAt)}
                   </div>
                 )}
 
-                <div
-                  className={
-                    "chat " +
-                    (msg.senderId === userId ? "chat-end" : "chat-start")
-                  }
-                >
+                <div className={`chat ${msg.senderId === userId ? "chat-end" : "chat-start"}`}>
                   <div className="chat-header text-xs opacity-60 mb-1">
                     {msg.firstName}
                     <time className="ml-2">
@@ -352,11 +343,11 @@ const Chat = () => {
           <div ref={bottomRef} />
         </div>
 
-        {/* Scroll to Bottom Button */}
+        {/* Scroll Button */}
         {!isAtBottom && (
           <button
-            onClick={scrollToBottom}
-            className="btn btn-circle btn-primary absolute bottom-20 right-8 shadow-lg"
+            onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+            className="btn btn-circle btn-primary absolute bottom-20 right-8 shadow-lg z-10"
           >
             ↓
             {unreadCount > 0 && (
@@ -370,7 +361,7 @@ const Chat = () => {
         {/* Input Area */}
         <div className="p-3 border-t border-base-300">
           {isTyping && (
-            <div className="text-xs italic opacity-70 mb-1.5">
+            <div className="text-xs italic opacity-70 mb-1.5 ml-2">
               {typingUser} is typing...
             </div>
           )}
@@ -379,33 +370,16 @@ const Chat = () => {
             <input
               type="text"
               value={newMessage}
-              onChange={(e) => {
-                setNewMessage(e.target.value);
-
-                if (socketRef.current && isSocketReady) {
-                  socketRef.current.emit("typing", {
-                    roomId,
-                    firstName: user.firstName,
-                  });
-
-                  if (typingTimeoutRef.current)
-                    clearTimeout(typingTimeoutRef.current);
-
-                  typingTimeoutRef.current = setTimeout(() => {
-                    socketRef.current.emit("stopTyping", { roomId });
-                  }, 1500);
-                }
-              }}
+              onChange={handleTypingInput}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               className="input input-bordered input-sm flex-1"
               placeholder="Type a message..."
-              disabled={!isSocketReady}
+              disabled={!socket}
             />
-
-            <button 
-              onClick={sendMessage} 
+            <button
+              onClick={sendMessage}
               className="btn btn-primary btn-sm"
-              disabled={!isSocketReady || !newMessage.trim()}
+              disabled={!socket || !newMessage.trim()}
             >
               Send
             </button>

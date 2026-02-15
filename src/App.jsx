@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
+import { SocketProvider } from "./utils/SocketContext";
 import Body from "./components/Body";
 import Login from "./components/Login";
 import Profile from "./components/Profile";
@@ -73,6 +74,8 @@ const App = () => {
       
       {/* Content with higher z-index */}
       <div className="relative z-10">
+        {/* 👇 WRAP ROUTES IN SOCKETPROVIDER */}
+        <SocketProvider>
         <Routes>
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
@@ -85,6 +88,7 @@ const App = () => {
             <Route path="/chat/:targetUserId" element={<Chat />} />
           </Route>
         </Routes>
+        </SocketProvider>
       </div>
     </div>
   );

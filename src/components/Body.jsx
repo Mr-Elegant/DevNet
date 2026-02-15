@@ -6,11 +6,13 @@ import NavBar from './NavBar'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {addUser} from "../utils/userSlice.js"
 import { useEffect } from 'react'
+import { useSocket } from "../utils/SocketContext.jsx"
 
 const Body = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const userData = useSelector((store) => store.user);
+  const socket = useSocket();    // 👈 GET SOCKET INSTANCE
 
   const fetchUser = async () => {
     if (userData) return;
@@ -26,6 +28,34 @@ const Body = () => {
   useEffect(() => {
     fetchUser();
   }, []);
+
+
+ // ✅ GLOBAL MESSAGE LISTENER
+  useEffect(() => {
+    if (!socket || !userData) return;
+
+    const handleIncomingMessage = (msg) => {
+      // If the message is NOT from me (it's incoming)
+      if (msg.senderId !== userData._id) {
+        console.log("Global Listener: Caught message, marking delivered.");
+        
+        // Emit 'Delivered' event immediately
+        socket.emit("markMessageDelivered", {
+          chatId: msg.chatId,
+          messageId: msg._id,
+          roomId: msg.roomId,
+        });
+      }
+    };
+
+    socket.on("messageReceived", handleIncomingMessage);
+
+    return () => {
+      socket.off("messageReceived", handleIncomingMessage);
+    };
+  }, [socket, userData]);  // Re-run if socket or user changes
+
+
 
   return (
     <div className="flex flex-col min-h-screen">
