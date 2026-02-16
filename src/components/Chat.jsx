@@ -3,17 +3,18 @@ import { useSelector } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { useSocket } from "../utils/SocketContext"; // 👈 Import the global socket hook
+import { useSocket } from "../utils/SocketContext";
+import EmojiPicker from "emoji-picker-react"; // 👈 New Import
 
 const Chat = () => {
   const { targetUserId } = useParams();
-  const socket = useSocket(); // 👈 Use the global socket instance
+  const socket = useSocket();
 
   const messagesContainerRef = useRef(null);
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const isAtBottomRef = useRef(true);
-  const processedMessagesRef = useRef(new Set()); // 👈 Track processed message IDs to prevent duplicates
+  const processedMessagesRef = useRef(new Set());
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -23,9 +24,14 @@ const Chat = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
-  const [isOnline, setIsOnline] = useState(false); // 👈 New State for Online Status
+  const [isOnline, setIsOnline] = useState(false);
+
+  // 👈 New States for Emojis & Uploads
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const user = useSelector((store) => store.user);
+  const theme = useSelector((store) => store.theme); // Get current theme for emoji picker
   const userId = user?._id;
 
   const { state } = useLocation();
@@ -52,16 +58,15 @@ const Chat = () => {
         firstName: m.senderId?.firstName || "Unknown",
         lastName: m.senderId?.lastName || "",
         text: m.text,
+        image: m.image, // 👈 Added image field
         createdAt: m.createdAt,
         status: m.status,
       }));
 
       setMessages(normalized);
-
-      //  track existing messages to prevent duplicates from socket events (Track existing IDs so we don't duplicate them)
-      processedMessagesRef.current = new Set(normalized.map((m) => m._id.toString()));
-
-
+      processedMessagesRef.current = new Set(
+        normalized.map((m) => m._id.toString()),
+      );
     } catch (error) {
       console.error("Failed to fetch chat:", error);
     }
@@ -75,48 +80,31 @@ const Chat = () => {
   useEffect(() => {
     if (!socket || !roomId || !chatId) return;
 
-    console.log("🔌 Attaching Chat Listeners to global socket");
-
-    // -- EMIT JOIN EVENTS --
     socket.emit("joinChat", { roomId });
     socket.emit("markMessagesSeen", { chatId, roomId, userId });
-    socket.emit("checkOnlineStatus", targetUserId); // 👈 Ask if they are online
+    socket.emit("checkOnlineStatus", targetUserId);
 
-
-    // -- DEFINE HANDLERS --
-    
-    // Handle incoming messages
     const handleMessageReceived = (msg) => {
-
       const msgIdStr = msg._id.toString();
 
-      // 👈 ADD THIS BLOCKER: If we already rendered this ID, ignore it!
-      if (processedMessagesRef.current.has(msgIdStr)) {
-        console.log("Duplicate message received, ignoring:", msgIdStr);
-        return;
-      }
-      processedMessagesRef.current.add(msgIdStr); // Mark this ID as processed
+      // Prevent duplicate rendering
+      if (processedMessagesRef.current.has(msgIdStr)) return;
+      processedMessagesRef.current.add(msgIdStr);
 
       const normalizedMsg = {
-        _id: msg._id.toString(),
+        _id: msgIdStr,
         senderId: msg.senderId,
         firstName: msg.firstName,
         lastName: msg.lastName,
         text: msg.text,
+        image: msg.image, // 👈 Capture incoming image
         createdAt: msg.createdAt,
         status: msg.status,
       };
 
-      // Notes:   
-          //    Filter by ID: msg.senderId === targetUserId checks if the incoming message is actually from the person currently on your screen.If it's from someone else, it won't be added to this chat's message list at all. This is crucial for preventing "ghost messages" from appearing in the wrong chat window.
-          // Prevents Ghost Reads: If you are chatting with "Alice" and "Bob" sends a message, "Bob's" message will be ignored by this specific Chat component instance. It won't be marked as seen, and it won't weirdly appear in Alice's chat log.
-
-      // 1. Only add message to UI if it belongs to THIS chat
-      // (This prevents messages from User B appearing in User A's chat window)
       if (msg.senderId === targetUserId || msg.senderId === userId) {
         setMessages((prev) => [...prev, normalizedMsg]);
-        
-        // 2. Only mark as seen if it comes from the user we are CURRENTLY looking at
+
         if (msg.senderId === targetUserId) {
           socket.emit("messageSeen", {
             chatId,
@@ -128,19 +116,17 @@ const Chat = () => {
       }
     };
 
-    // Handle Ticks (Sent -> Delivered -> Seen)
     const handleUpdateMessageStatus = ({ messageId, status }) => {
-      setMessages((prev) => 
+      setMessages((prev) =>
         prev.map((msg) => {
           if (msg._id === messageId.toString()) {
-            return { ...msg, status }; // Update status immutably
+            return { ...msg, status };
           }
           return msg;
-        })
+        }),
       );
     };
 
-    // Handle Typing
     const handleTyping = ({ firstName }) => {
       setIsTyping(true);
       setTypingUser(firstName);
@@ -151,7 +137,6 @@ const Chat = () => {
       setTypingUser("");
     };
 
-    // Handle Online Status
     const handleOnlineStatus = ({ userId: id, isOnline: status }) => {
       if (id === targetUserId) setIsOnline(status);
     };
@@ -164,7 +149,6 @@ const Chat = () => {
       if (id === targetUserId) setIsOnline(false);
     };
 
-    // -- ATTACH LISTENERS --
     socket.on("messageReceived", handleMessageReceived);
     socket.on("updateMessageStatus", handleUpdateMessageStatus);
     socket.on("userTyping", handleTyping);
@@ -173,9 +157,7 @@ const Chat = () => {
     socket.on("userOnline", handleUserOnline);
     socket.on("userOffline", handleUserOffline);
 
-    // -- CLEANUP --
     return () => {
-      // ⚠️ IMPORTANT: Remove listeners but DO NOT disconnect the socket
       socket.off("messageReceived", handleMessageReceived);
       socket.off("updateMessageStatus", handleUpdateMessageStatus);
       socket.off("userTyping", handleTyping);
@@ -186,7 +168,7 @@ const Chat = () => {
     };
   }, [socket, roomId, chatId, userId, targetUserId]);
 
-  // 3. Scroll & UI Logic
+  // 3. Scroll Logic
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -211,8 +193,9 @@ const Chat = () => {
     }
   }, [messages, isAtBottom]);
 
+  // 4. Send Message (Text)
   const sendMessage = () => {
-    if (!newMessage.trim() || !socket) return;
+    if ((!newMessage.trim() && !isUploading) || !socket) return;
 
     socket.emit("sendMessage", {
       chatId,
@@ -221,10 +204,48 @@ const Chat = () => {
       firstName: user.firstName,
       lastName: user.lastName,
       text: newMessage,
+      imageUrl: null, // No image in a standard text message
     });
 
     socket.emit("stopTyping", { roomId });
     setNewMessage("");
+    setShowEmojiPicker(false); // Close emoji picker on send
+  };
+
+  // 5. Handle Image Upload (Secure via backend)
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const res = await axios.post(`${BASE_URL}/uploadImage`, formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const imageUrl = res.data.imageUrl;
+
+      // Instantly send message with the returned image URL
+      socket.emit("sendMessage", {
+        chatId,
+        roomId,
+        userId,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        text: newMessage, // Send along any text they had typed
+        imageUrl: imageUrl,
+      });
+
+      setNewMessage("");
+    } catch (error) {
+      console.error("Image upload failed:", error);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleTypingInput = (e) => {
@@ -255,8 +276,7 @@ const Chat = () => {
         <div className="p-3 border-b border-base-300">
           <div className="flex items-center gap-3">
             {targetUser?.photoUrl && (
-              // 👇 Dynamic "online" class from daisyUI
-              <div className={`avatar ${isOnline ? 'online' : ''}`}>
+              <div className={`avatar ${isOnline ? "online" : ""}`}>
                 <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
                   <img src={targetUser.photoUrl} alt={targetUser.firstName} />
                 </div>
@@ -268,7 +288,6 @@ const Chat = () => {
                   ? `${targetUser.firstName} ${targetUser.lastName || ""}`
                   : "Chat"}
               </h2>
-              {/* 👇 Text Indicator */}
               <div className="text-xs mt-0.5">
                 {isOnline ? (
                   <span className="text-success font-medium">Online</span>
@@ -277,12 +296,15 @@ const Chat = () => {
                 )}
               </div>
             </div>
-            
-            {/* Socket Status Indicator */}
+
             <div className="ml-auto">
-               <div className={`badge badge-xs ${socket?.connected ? 'badge-success' : 'badge-error'}`}>
-                 {socket?.connected ? '●' : '○'}
-               </div>
+              <div
+                className={`badge badge-xs ${
+                  socket?.connected ? "badge-success" : "badge-error"
+                }`}
+              >
+                {socket?.connected ? "●" : "○"}
+              </div>
             </div>
           </div>
         </div>
@@ -306,7 +328,11 @@ const Chat = () => {
                   </div>
                 )}
 
-                <div className={`chat ${msg.senderId === userId ? "chat-end" : "chat-start"}`}>
+                <div
+                  className={`chat ${
+                    msg.senderId === userId ? "chat-end" : "chat-start"
+                  }`}
+                >
                   <div className="chat-header text-xs opacity-60 mb-1">
                     {msg.firstName}
                     <time className="ml-2">
@@ -324,7 +350,17 @@ const Chat = () => {
                         : "chat-bubble-secondary"
                     }`}
                   >
-                    {msg.text}
+                    {/* 👈 Render Image if it exists */}
+                    {msg.image && (
+                      <img
+                        src={msg.image}
+                        alt="attachment"
+                        className="max-w-xs rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(msg.image, "_blank")}
+                      />
+                    )}
+                    {/* Render Text if it exists */}
+                    {msg.text && <p>{msg.text}</p>}
                   </div>
 
                   {msg.senderId === userId && (
@@ -346,7 +382,9 @@ const Chat = () => {
         {/* Scroll Button */}
         {!isAtBottom && (
           <button
-            onClick={() => bottomRef.current?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() =>
+              bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+            }
             className="btn btn-circle btn-primary absolute bottom-20 right-8 shadow-lg z-10"
           >
             ↓
@@ -359,14 +397,68 @@ const Chat = () => {
         )}
 
         {/* Input Area */}
-        <div className="p-3 border-t border-base-300">
+        <div className="p-3 border-t border-base-300 relative">
+          {/* 👈 Emoji Picker Popup */}
+          {showEmojiPicker && (
+            <div className="absolute bottom-16 left-4 z-50 shadow-2xl">
+              <EmojiPicker
+                onEmojiClick={(emojiData) =>
+                  setNewMessage((prev) => prev + emojiData.emoji)
+                }
+                theme={
+                  theme === "dark" || theme === "dracula" ? "dark" : "light"
+                }
+              />
+            </div>
+          )}
+
           {isTyping && (
             <div className="text-xs italic opacity-70 mb-1.5 ml-2">
               {typingUser} is typing...
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {/* 👈 Emoji Toggle Button */}
+            <button
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="btn btn-circle btn-ghost btn-sm text-xl"
+            >
+              😀
+            </button>
+
+            {/* 👈 Image Upload Button */}
+            <input
+              type="file"
+              id="imageUpload"
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <label
+              htmlFor="imageUpload"
+              className={`btn btn-circle btn-ghost btn-sm ${
+                isUploading ? "loading" : ""
+              }`}
+            >
+              {!isUploading && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
+                  />
+                </svg>
+              )}
+            </label>
+
             <input
               type="text"
               value={newMessage}
@@ -374,12 +466,13 @@ const Chat = () => {
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               className="input input-bordered input-sm flex-1"
               placeholder="Type a message..."
-              disabled={!socket}
+              disabled={!socket || isUploading}
             />
+
             <button
               onClick={sendMessage}
               className="btn btn-primary btn-sm"
-              disabled={!socket || !newMessage.trim()}
+              disabled={!socket || (!newMessage.trim() && !isUploading)}
             >
               Send
             </button>

@@ -14,8 +14,39 @@ const EditProfile = ({ user }) => {
   const [about, setAbout] = useState(user.about || "");
   const [error, setError] = useState("");
   const [showToast, setShowToast] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
 
   const dispatch = useDispatch();
+
+  // 👈 NEW: Secure Image Upload Handler
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(""); // Clear any previous errors
+
+    const formData = new FormData();
+    formData.append("image", file); // Must match backend upload.single("image")
+
+    try {
+      const res = await axios.post(`${BASE_URL}/uploadImage`, formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Instantly update the form and the live preview card!
+      setPhotoUrl(res.data.imageUrl);
+    } catch (err) {
+      console.error("Profile picture upload failed:", err);
+      setError("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
 
   const saveProfile = async () => {
     setError("");
@@ -83,16 +114,51 @@ const EditProfile = ({ user }) => {
                 />
               </div>
 
-              <div className="form-control">
+              {/* 📸 Profile Picture Upload Section */}
+              <div className="form-control mb-4">
                 <label className="label">
-                  <span className="label-text">Photo URL</span>
+                  <span className="label-text font-semibold">Profile Photo</span>
                 </label>
+                
+                <div className="flex items-center gap-4 mb-3">
+                  {/* Current Photo Thumbnail */}
+                  <div className="avatar">
+                    <div className="w-16 h-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 object-cover overflow-hidden">
+                      <img 
+                        src={photoUrl || "https://www.w3schools.com/howto/img_avatar.png"} 
+                        alt="Profile Preview" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Upload Button */}
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="file"
+                      id="profileImageUpload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                    <label
+                      htmlFor="profileImageUpload"
+                      className={`btn btn-secondary btn-sm ${isUploading ? 'loading' : ''}`}
+                    >
+                      {isUploading ? "Uploading..." : "Upload New Photo"}
+                    </label>
+                    <span className="text-xs text-base-content/60">
+                      Or paste a direct URL below
+                    </span>
+                  </div>
+                </div>
+
+                {/* Manual URL Input (Fallback) */}
                 <input
                   type="text"
-                  placeholder="https://example.com/photo.jpg"
-                  className="input input-bordered w-full"
                   value={photoUrl}
                   onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="input input-bordered w-full text-sm"
+                  placeholder="https://..."
                 />
               </div>
 
@@ -161,6 +227,7 @@ const EditProfile = ({ user }) => {
               <h2 className="card-title text-2xl mb-6">Preview</h2>
               <UserCard
                 user={{ firstName, lastName, photoUrl, age, gender, about }}
+                isPreview={true} 
               />
             </div>
           </div>

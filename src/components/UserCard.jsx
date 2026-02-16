@@ -3,7 +3,8 @@ import { BASE_URL } from "../utils/constants";
 import { useDispatch } from "react-redux";
 import { removeUserFromFeed } from "../utils/feedSlice";
 
-const UserCard = ({ user }) => {
+// UserCard component to display user information and handle interactions.
+const UserCard = ({ user, isPreview = false }) => {
   const { _id, firstName, lastName, photoUrl, age, gender, about } = user;
   const dispatch = useDispatch();
 
@@ -38,6 +39,10 @@ const UserCard = ({ user }) => {
 
       <div className="card-body">
         <p className="text-sm text-base-content/80 line-clamp-3">{about}</p>
+
+
+        {/* 👇 2. Wrap the buttons in this condition so they only show if it is NOT a preview */}
+        {!isPreview && (
         <div className="card-actions justify-between mt-4">
           <button
             className="btn btn-ghost flex-1"
@@ -52,7 +57,7 @@ const UserCard = ({ user }) => {
             Interested
           </button>
         </div>
-      </div>
+        )}</div>
     </div>
   );
 };
