@@ -153,3 +153,54 @@ Body
     - Ref - https://razorpay.com/docs/payments/server-integration/nodejs/integration-steps/#integrate-with-razorpay-payment-gateway
     - Ref - https://razorpay.com/docs/webhooks/validate-test/
     - Ref - https://razorpay.com/docs/webhooks/payloads/payments/
+
+
+
+#   # 💬 DevNet Real-Time Chat Architecture
+
+The DevNet chat engine is a robust, production-grade real-time messaging system built with the MERN stack and Socket.io. It goes beyond basic messaging by implementing advanced features like global presence tracking, robust read receipts (WhatsApp-style), offline catch-up synchronization, and secure media/file handling.
+
+## ✨ Key Features
+
+* **🟢 Global Online Presence:** Real-time online/offline status indicators that track users across the entire application, not just within the chat window.
+* **✔️ WhatsApp-Style Read Receipts:** Highly accurate message status tracking:
+  * Single Tick (✓): Sent to server.
+  * Double Tick (✓✓): Delivered to the receiver's device.
+  * Blue Double Tick (**✓✓ Read**): Message has been seen by the receiver.
+* **🔄 Offline Catch-Up Sync:** If a user receives messages while completely offline, the backend instantly scans and updates pending deliveries the moment they reconnect, seamlessly syncing the sender's UI.
+* **📎 Universal File Sharing:** Secure upload pipeline supporting both inline images and raw documents (PDFs, ZIPs, DOCs). Features dynamic UI rendering based on file type.
+* **😀 Rich Text & Emojis:** Integrated emoji picker with native dark/light theme support.
+* **💬 Typing Indicators:** Real-time "User is typing..." indicators with debounced timeouts to prevent UI flickering.
+* **🔔 Global Push Notifications:** A Redux-powered notification bell that alerts users to new messages or connection requests while they are browsing other pages of the application.
+
+---
+
+## 🏗️ System Architecture & Workflow
+
+### 1. Connection & Security
+* **Deterministic Room IDs:** Private chat rooms are secured using a `crypto` SHA-256 hash of both users' sorted MongoDB Object IDs. This ensures User A and User B always connect to the exact same secure socket room without needing to store room IDs in the database.
+* **Global `userSocketMap`:** The Node.js server maintains an active memory map of `userId` to `socket.id`. This allows the server to push notifications or delivery receipts to a user regardless of which page they are currently viewing.
+
+### 2. The Message Lifecycle (Tick System)
+1. **Send:** The sender dispatches a payload. The backend saves it to MongoDB with a `status: "sent"` and broadcasts it to the room.
+2. **Delivery (If Online):** The global listener on the receiver's client catches the message and instantly fires a `markMessageDelivered` event back to the server. The server updates the database atomically using `$elemMatch` and notifies the sender to display `✓✓`.
+3. **Delivery (If Offline):** When the receiver eventually logs in, the `registerUser` event triggers a database sweep for any pending "sent" messages, updates them, and pushes the delivery receipts to the senders.
+4. **Read:** Once the receiver explicitly opens the active chat window, a `markMessagesSeen` event fires, turning the ticks blue.
+
+### 3. Secure File Upload Pipeline
+Raw files are **never** sent over WebSockets. DevNet utilizes a secure 3-step proxy architecture:
+1. **Frontend:** React intercepts the file and posts it to a protected Express route via `multipart/form-data`.
+2. **Backend (Multer):** Node.js holds the file securely in RAM using `multer.memoryStorage()`, preventing local disk bloat.
+3. **Cloud Storage (Cloudinary):** The buffer is securely streamed to Cloudinary with `resource_type: "auto"` to support all extensions. The secure URL and original filename are returned to the server and relayed to the chat room.
+
+### 4. Client-Side Deduplication
+To handle the complexities of React StrictMode and Socket.io reconnections, the frontend utilizes a JavaScript `Set()` (`processedMessagesRef`) to index incoming message IDs. This guarantees a flawlessly smooth UI with zero duplicate message renders.
+
+---
+
+## 🛠️ Tech Stack & Libraries
+
+* **Backend:** Node.js, Express, MongoDB, Mongoose, Socket.io (`socket.io`), Crypto
+* **Frontend:** React, Redux Toolkit, React Router, Socket.io-client, Axios, Tailwind CSS, daisyUI
+* **Media Processing:** Multer (Memory Storage), Cloudinary API
+* **UI Components:** `emoji-picker-react`    
