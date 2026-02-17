@@ -59,6 +59,8 @@ const Chat = () => {
         lastName: m.senderId?.lastName || "",
         text: m.text,
         image: m.image, // 👈 Added image field
+        file: m.fileUrl, // 👈 Added file field
+        fileName: m.fileName, // 👈 Added file name for display
         createdAt: m.createdAt,
         status: m.status,
       }));
@@ -98,6 +100,8 @@ const Chat = () => {
         lastName: msg.lastName,
         text: msg.text,
         image: msg.image, // 👈 Capture incoming image
+        fileUrl: msg.fileUrl,    
+        fileName: msg.fileName,
         createdAt: msg.createdAt,
         status: msg.status,
       };
@@ -213,21 +217,24 @@ const Chat = () => {
   };
 
   // 5. Handle Image Upload (Secure via backend)
-  const handleImageUpload = async (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsUploading(true);
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("file", file);    // 👈 Matches backend upload.single("file")
 
     try {
-      const res = await axios.post(`${BASE_URL}/uploadImage`, formData, {
+      const res = await axios.post(`${BASE_URL}/uploadFile`, formData, {
         withCredentials: true,
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const imageUrl = res.data.imageUrl;
+      const {fileUrl, fileName, resourceType} = res.data;
+
+      // Determine if it's an image or a generic file
+      const isImage = resourceType === "image";
 
       // Instantly send message with the returned image URL
       socket.emit("sendMessage", {
@@ -237,7 +244,9 @@ const Chat = () => {
         firstName: user.firstName,
         lastName: user.lastName,
         text: newMessage, // Send along any text they had typed
-        imageUrl: imageUrl,
+        imageUrl: isImage ? fileUrl : null, // If image , use image UI
+        fileUrl: !isImage ? fileUrl : null, // If not image, use file UI
+        fileName: !isImage ? fileName : null, // Send file name for display
       });
 
       setNewMessage("");
@@ -350,16 +359,20 @@ const Chat = () => {
                         : "chat-bubble-secondary"
                     }`}
                   >
-                    {/* 👈 Render Image if it exists */}
+                    {/* Render Image */}
                     {msg.image && (
-                      <img
-                        src={msg.image}
-                        alt="attachment"
-                        className="max-w-xs rounded-lg mb-2 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(msg.image, "_blank")}
-                      />
+                      <img src={msg.image} alt="attachment" className="max-w-xs rounded-lg mb-2 cursor-pointer hover:opacity-90" onClick={() => window.open(msg.image, "_blank")} />
                     )}
-                    {/* Render Text if it exists */}
+
+                    {/* 👈 NEW: Render Generic File (PDF, ZIP, etc) */}
+                    {msg.fileUrl && (
+                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-base-100/20 p-3 rounded-lg hover:bg-base-100/40 transition mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        <span className="text-sm font-medium underline truncate max-w-[200px]">{msg.fileName || "Download File"}</span>
+                      </a>
+                    )}
+
+                    {/* Render Text */}
                     {msg.text && <p>{msg.text}</p>}
                   </div>
 
@@ -432,8 +445,7 @@ const Chat = () => {
               type="file"
               id="imageUpload"
               className="hidden"
-              accept="image/*"
-              onChange={handleImageUpload}
+              onChange={handleFileUpload}
             />
             <label
               htmlFor="imageUpload"
