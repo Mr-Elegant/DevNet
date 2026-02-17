@@ -4,6 +4,7 @@ import feedReducer from "./feedSlice";
 import connectionReducer from "./connectionSlice";
 import requestReducer from './requestsSlice';
 import themeReducer from './themeSlice';
+import notificationReducer from './notificationSlice';
 
 const store = configureStore({
 
@@ -13,6 +14,7 @@ const store = configureStore({
     connections : connectionReducer,
     requests: requestReducer,
     theme: themeReducer, 
+    notifications: notificationReducer,
   },
 })
 

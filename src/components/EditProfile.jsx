@@ -117,10 +117,10 @@ const EditProfile = ({ user }) => {
               {/* 📸 Profile Picture Upload Section */}
               <div className="form-control mb-4">
                 <label className="label">
-                  <span className="label-text font-semibold">Profile Photo</span>
+                  <span className="label-text font-semibold mb-3">Profile Photo</span>
                 </label>
                 
-                <div className="flex items-center gap-4 mb-3">
+                <div className="flex items-center gap-4 mb-4">
                   {/* Current Photo Thumbnail */}
                   <div className="avatar">
                     <div className="w-16 h-16 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 object-cover overflow-hidden">
@@ -198,7 +198,7 @@ const EditProfile = ({ user }) => {
                 </label>
                 <textarea
                   placeholder="Tell us about yourself"
-                  className="textarea textarea-bordered h-24"
+                  className="textarea textarea-bordered h-24 m-6"
                   value={about}
                   onChange={(e) => setAbout(e.target.value)}
                 />

@@ -5,6 +5,7 @@ import Footer from './Footer'
 import NavBar from './NavBar'
 import { Outlet, useNavigate } from 'react-router-dom'
 import {addUser} from "../utils/userSlice.js"
+import { addNotification } from "../utils/notificationSlice.js"
 import { useEffect } from 'react'
 import { useSocket } from "../utils/SocketContext.jsx"
 
@@ -30,10 +31,15 @@ const Body = () => {
   }, []);
 
 
- // ✅ GLOBAL MESSAGE LISTENER
+ // ✅ GLOBAL MESSAGE LISTENER and Requests LISTENER
   useEffect(() => {
     if (!socket || !userData) return;
 
+    // 🧹 1. BULLETPROOF FIX: Aggressively remove any ghost listeners first!
+    socket.off("messageReceived");
+    socket.off("connectionRequestReceived");
+
+    // 2. Define your handlers
     const handleIncomingMessage = (msg) => {
       // If the message is NOT from me (it's incoming)
       if (msg.senderId !== userData._id) {
@@ -45,15 +51,44 @@ const Body = () => {
           messageId: msg._id,
           roomId: msg.roomId,
         });
+
+        // Check if we are NOT currently in that chat room
+        const currentPath = window.location.pathname;
+        if(!currentPath.includes(`/chat/${msg.senderId}`)) {
+          // Dispatch a notification to the redux store
+          dispatch(addNotification({
+            senderId: msg.senderId,
+            text: msg.image ? "🖼️ Sent you an image" : msg.text,  // Handle image attachments gracefully
+            type: "message",
+            firstName: msg.firstName,
+            lastName: msg.lastName,            
+          }));
+        }
+
       }
     };
 
-    socket.on("messageReceived", handleIncomingMessage);
+    //   2. 👈 NEW: Friend Request Listener
+    const handleIncomingRequest = (data) => {
+        console.log("Global Listener: Caught new connection request!");
+        dispatch(addNotification({
+          type: "request",    // Matches the type in your Navbar!
+          senderId: data.senderId,
+          firstName: data.firstName,
+          text: data.text,
+        }))
+    }
 
+    // Attach listeners 
+    socket.on("messageReceived", handleIncomingMessage);
+    socket.on("connectionRequestReceived", handleIncomingRequest);
+
+    // Cleanup
     return () => {
-      socket.off("messageReceived", handleIncomingMessage);
+      socket.off("messageReceived");
+      socket.off("connectionRequestReceived");
     };
-  }, [socket, userData]);  // Re-run if socket or user changes
+  }, [socket, userData, dispatch]);   // Re-run if socket or user changes
 
 
 
