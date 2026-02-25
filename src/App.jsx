@@ -11,6 +11,7 @@ import Requests from "./components/Requests";
 import Signup from "./components/Signup";
 import Premium from "./components/Premium";
 import Chat from "./components/Chat";
+import GlobalFeed from "./components/GlobalFeed";
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -86,6 +87,8 @@ const App = () => {
             <Route path="/requests" element={<Requests />}  /> 
             <Route path="/premium" element={<Premium />}  /> 
             <Route path="/chat/:targetUserId" element={<Chat />} />
+            <Route path="/community" element={<GlobalFeed />} />
+            
           </Route>
         </Routes>
         </SocketProvider>

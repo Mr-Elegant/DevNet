@@ -153,6 +153,15 @@ const Chat = () => {
       if (id === targetUserId) setIsOnline(false);
     };
 
+    // 👈 NEW: Listener for when a message is deleted
+    const handleMessageDeleted = ({ messageId }) => {
+      // Filter out the deleted message from our local React state
+      // This causes it to instantly vanish from the screen without refreshing!
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId.toString()));
+    };
+
+
+
     socket.on("messageReceived", handleMessageReceived);
     socket.on("updateMessageStatus", handleUpdateMessageStatus);
     socket.on("userTyping", handleTyping);
@@ -160,6 +169,7 @@ const Chat = () => {
     socket.on("onlineStatus", handleOnlineStatus);
     socket.on("userOnline", handleUserOnline);
     socket.on("userOffline", handleUserOffline);
+    socket.on("messageDeleted", handleMessageDeleted); // 👈 Listen for message deletions
 
     return () => {
       socket.off("messageReceived", handleMessageReceived);
@@ -278,6 +288,26 @@ const Chat = () => {
     return d.toLocaleDateString();
   };
 
+
+// ==========================================
+  // DELETE MESSAGE HANDLER
+  // ==========================================
+  const handleDeleteMessage = (messageId) => {
+    // Add a quick confirmation dialog so they don't accidentally delete things!
+    const confirmDelete = window.confirm("Are you sure you want to delete this message for everyone?");
+    
+    if (confirmDelete && socket) {
+      // Tell the server to delete it
+      socket.emit("deleteMessage", {
+        chatId,
+        messageId,
+        roomId,
+        userId, // Send our ID so the server can verify we own this message
+      });
+    }
+  };
+
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="card bg-base-200 shadow-xl border border-primary/20 max-w-4xl mx-auto h-[75vh] flex flex-col">
@@ -376,13 +406,30 @@ const Chat = () => {
                     {msg.text && <p>{msg.text}</p>}
                   </div>
 
+                  {/* Message Footer (Ticks & Delete Button) */}
                   {msg.senderId === userId && (
-                    <div className="chat-footer opacity-50 text-xs mt-1">
-                      {msg.status === "sent" && "✓"}
-                      {msg.status === "delivered" && "✓✓"}
-                      {msg.status === "seen" && (
-                        <span className="text-primary font-bold">✓✓ Read</span>
-                      )}
+                    <div className="chat-footer opacity-50 text-xs mt-1 flex gap-3 items-center">
+                      
+                      {/* The Read Receipt Ticks */}
+                      <span>
+                        {msg.status === "sent" && "✓"}
+                        {msg.status === "delivered" && "✓✓"}
+                        {msg.status === "seen" && (
+                          <span className="text-primary font-bold">✓✓ Read</span>
+                        )}
+                      </span>
+
+                      {/* 👈 NEW: The Delete Button */}
+                      <button 
+                        onClick={() => handleDeleteMessage(msg._id)}
+                        className="hover:text-error transition-colors duration-200 cursor-pointer flex items-center gap-1"
+                        title="Delete for everyone"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+
                     </div>
                   )}
                 </div>
