@@ -12,6 +12,7 @@ import Signup from "./components/Signup";
 import Premium from "./components/Premium";
 import Chat from "./components/Chat";
 import GlobalFeed from "./components/GlobalFeed";
+import PostDetails from "./components/PostDetails";
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -88,6 +89,7 @@ const App = () => {
             <Route path="/premium" element={<Premium />}  /> 
             <Route path="/chat/:targetUserId" element={<Chat />} />
             <Route path="/community" element={<GlobalFeed />} />
+            <Route path="/post/:postId" element={<PostDetails />} />
             
           </Route>
         </Routes>

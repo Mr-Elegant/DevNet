@@ -1,53 +1,42 @@
 // ==========================================
 // 1. IMPORTS
 // ==========================================
-import { useState, useEffect } from "react"; // Hooks for state and component lifecycle
-import axios from "axios"; // HTTP client for backend requests
-import { BASE_URL } from "../utils/constants"; // Backend server URL
-import CreatePost from "./CreatePost"; // The component we just built!
-import { useSelector } from "react-redux"; // To get the logged-in user's ID for "Like" status
-import { Link } from "react-router-dom"; // To wrap profile pictures in clickable links
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { BASE_URL } from "../utils/constants";
+import CreatePost from "./CreatePost";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 const GlobalFeed = () => {
   // ==========================================
   // 2. STATE MANAGEMENT
   // ==========================================
-  // Grab the logged-in user to check if they have liked a post
   const loggedInUser = useSelector((store) => store.user);
-  
-  // The array holding all the posts currently visible on screen
   const [posts, setPosts] = useState([]);
-  
-  // Track the current page number for pagination
   const [page, setPage] = useState(1);
-  
-  // Track if there are more posts to fetch (hides the "Load More" button if false)
   const [hasMore, setHasMore] = useState(true);
-  
-  // Loading states
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✨ NEW: Tracks whether the Create Post editor is open or closed
+  const [showEditor, setShowEditor] = useState(false);
+
   // ==========================================
-  // 3. FETCH FEED LOGIC (Pagination)
+  // 3. FETCH FEED LOGIC
   // ==========================================
   const fetchFeed = async (pageNumber = 1, isRefresh = false) => {
     setIsLoading(true);
     try {
-      // Hit the paginated backend route (e.g., ?page=1&limit=10)
       const res = await axios.get(`${BASE_URL}/post/feed?page=${pageNumber}&limit=10`, {
         withCredentials: true,
       });
 
       const newPosts = res.data.data;
-
-      // If the backend returns less than 10 posts, we know we've reached the end of the database!
       if (newPosts.length < 10) setHasMore(false);
 
       if (isRefresh) {
-        // If it's a refresh (like after creating a new post), overwrite the array
         setPosts(newPosts);
       } else {
-        // If they clicked "Load More", append the new posts to the bottom of the existing array
         setPosts((prev) => [...prev, ...newPosts]);
       }
     } catch (error) {
@@ -57,7 +46,6 @@ const GlobalFeed = () => {
     }
   };
 
-  // Run the fetch function exactly once when the component mounts
   useEffect(() => {
     fetchFeed(1, true);
   }, []);
@@ -65,35 +53,29 @@ const GlobalFeed = () => {
   // ==========================================
   // 4. EVENT HANDLERS
   // ==========================================
-  // Passed down to CreatePost. When a post is created, it calls this to instantly refresh the feed!
   const handlePostCreated = () => {
-    setPage(1); // Reset to page 1
-    setHasMore(true); // Reset the load more button
-    fetchFeed(1, true); // Fetch the absolute newest posts
+    setPage(1);
+    setHasMore(true);
+    fetchFeed(1, true);
+    // ✨ NEW: Automatically close the editor after they successfully publish a post!
+    setShowEditor(false); 
   };
 
-  // The "Load More" button click handler
   const loadMorePosts = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     fetchFeed(nextPage, false);
   };
 
-  // Real-time Like Toggle (Optimistic UI Update)
   const handleLike = async (postId) => {
     try {
-      // 1. Immediately send the request to the backend
       const res = await axios.post(`${BASE_URL}/post/like/${postId}`, {}, { withCredentials: true });
-
-      // 2. Update the React state instantly so the heart turns red without waiting for a page refresh!
       setPosts((prevPosts) =>
         prevPosts.map((post) => {
           if (post._id === postId) {
-            // Rebuild the likes array based on the backend response
             const updatedLikes = res.data.isLiked
-              ? [...post.likes, loggedInUser._id] // Add our ID
-              : post.likes.filter((id) => id !== loggedInUser._id); // Remove our ID
-
+              ? [...post.likes, loggedInUser._id]
+              : post.likes.filter((id) => id !== loggedInUser._id);
             return { ...post, likes: updatedLikes };
           }
           return post;
@@ -104,7 +86,6 @@ const GlobalFeed = () => {
     }
   };
 
-  // Helper to format dates (e.g., "2 hours ago")
   const formatTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -120,26 +101,43 @@ const GlobalFeed = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       
-      {/* 1. THE CREATE POST COMPONENT */}
-      <CreatePost onPostCreated={handlePostCreated} />
+      {/* ✨ TOP ACTION BAR */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-base-300">
+        
+        {/* Left Side: The Toggle Button */}
+        <button 
+          onClick={() => setShowEditor(!showEditor)} 
+          className={`btn shadow-lg transition-all duration-300 ${showEditor ? 'btn-ghost text-error' : 'btn-primary hover:scale-105'}`}
+        >
+          {/* Changes text based on whether it is open or closed */}
+          {showEditor ? "✕ Cancel Post" : "✍️ Create Post"}
+        </button>
 
-      {/* 2. THE FEED DIVIDER */}
-      <div className="divider my-8 font-bold text-base-content/50 uppercase tracking-widest">Global Dev Feed</div>
+        {/* Right Side: Page Title */}
+        <h1 className="text-xl sm:text-2xl font-black text-base-content/50 uppercase tracking-widest">
+          Community Feed
+        </h1>
+      </div>
 
-      {/* 3. THE POSTS LIST */}
+      {/* ✨ THE CREATE POST EDITOR (Only renders if showEditor is true) */}
+      {showEditor && (
+        <div className="mb-10 transition-all duration-500 ease-in-out transform origin-top">
+          <CreatePost onPostCreated={handlePostCreated} />
+        </div>
+      )}
+
+      {/* THE POSTS LIST */}
       <div className="space-y-6">
         {posts?.map((post) => {
-          // Check if the current user has liked this specific post
           const isLikedByMe = post.likes?.includes(loggedInUser?._id);
 
           return (
             <div key={post._id} className="card bg-base-100 shadow-xl border border-base-300 hover:border-primary/30 transition-colors">
               <div className="card-body p-5 sm:p-7">
                 
-                {/* --- POST HEADER (Author Info & Type Badge) --- */}
+                {/* POST HEADER */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-3 items-center">
-                    {/* Clickable Avatar pointing to their profile */}
                     <Link to={`/profile/${post.author?._id}`} className="avatar hover:opacity-80 transition-opacity">
                       <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                         <img src={post.author?.photoUrl || "https://via.placeholder.com/150"} alt="author" />
@@ -157,7 +155,6 @@ const GlobalFeed = () => {
                     </div>
                   </div>
 
-                  {/* Polymorphic Badge: Changes color based on post type! */}
                   <div className={`badge badge-sm sm:badge-md font-bold uppercase tracking-wider ${
                     post.type === "launch" ? "badge-success" :
                     post.type === "question" ? "badge-error" :
@@ -167,13 +164,10 @@ const GlobalFeed = () => {
                   </div>
                 </div>
 
-                {/* --- POST BODY (Dynamic content based on type) --- */}
+                {/* POST BODY */}
                 {post.title && <h2 className="text-2xl font-bold mb-2">{post.title}</h2>}
-                
-                {/* The main text content (whitespace-pre-wrap preserves line breaks!) */}
                 <p className="whitespace-pre-wrap text-base-content/90 mb-4">{post.content}</p>
 
-                {/* Optional Code Snippet Block */}
                 {post.codeSnippet && (
                   <div className="mockup-code bg-neutral text-neutral-content mb-4 before:hidden">
                     <pre data-prefix=">" className="text-warning"><code>{post.codeLanguage}</code></pre> 
@@ -181,21 +175,18 @@ const GlobalFeed = () => {
                   </div>
                 )}
 
-                {/* Optional Image Attachment */}
                 {post.images && post.images.length > 0 && (
                   <figure className="mb-4 rounded-xl overflow-hidden border border-base-300 max-h-[400px]">
                     <img src={post.images[0]} alt="Post attachment" className="object-cover w-full" />
                   </figure>
                 )}
 
-                {/* Optional Launch Button */}
                 {post.type === "launch" && post.projectUrl && (
                   <a href={post.projectUrl} target="_blank" rel="noreferrer" className="btn btn-success btn-outline btn-sm w-fit mb-4">
                     🚀 View Live Project
                   </a>
                 )}
 
-                {/* Tags */}
                 {post.tags && post.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {post.tags.map((tag, idx) => (
@@ -206,10 +197,8 @@ const GlobalFeed = () => {
                   </div>
                 )}
 
-                {/* --- POST FOOTER (Like & Comment Actions) --- */}
+                {/* POST FOOTER */}
                 <div className="flex items-center gap-6 mt-4 pt-4 border-t border-base-200">
-                  
-                  {/* Like Button */}
                   <button 
                     onClick={() => handleLike(post._id)}
                     className={`flex items-center gap-2 transition-transform active:scale-90 ${isLikedByMe ? "text-error" : "hover:text-error opacity-70"}`}
@@ -220,14 +209,14 @@ const GlobalFeed = () => {
                     <span className="font-semibold">{post.likes?.length || 0}</span>
                   </button>
 
-                  {/* Comment Button (Can act as a link to a detailed post page in the future) */}
                   <button className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
+                    <Link to={`/post/${post._id}`} className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03-8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     <span className="font-semibold">{post.comments?.length || 0}</span>
+                    </Link>
                   </button>
-
                 </div>
 
               </div>
@@ -235,7 +224,7 @@ const GlobalFeed = () => {
           );
         })}
 
-        {/* 4. LOADING STATE & LOAD MORE BUTTON */}
+        {/* LOADING & EMPTY STATES */}
         {isLoading && (
           <div className="flex justify-center py-8">
             <span className="loading loading-spinner loading-lg text-primary"></span>

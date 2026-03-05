@@ -8,6 +8,7 @@ import {addUser} from "../utils/userSlice.js"
 import { addNotification } from "../utils/notificationSlice.js"
 import { useEffect } from 'react'
 import { useSocket } from "../utils/SocketContext.jsx"
+import BottomNav from "./BottomNav.jsx"
 
 const Body = () => {
   const dispatch = useDispatch();
@@ -101,6 +102,8 @@ const Body = () => {
       </main>
 
       <Footer />
+
+      <BottomNav  />
     </div>
   );
 };

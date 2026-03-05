@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, NavLink } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
 import axios from "axios";
 import { removeUser } from "../utils/userSlice";
@@ -9,18 +9,22 @@ import ThemeSwitcher from "./ThemeSwitcher";
 
 const NavBar = () => {
   const user = useSelector((store) => store.user);
-  const notifications = useSelector((store) => store.notifications); // Get notifications from Redux store
+  const notifications = useSelector((store) => store.notifications);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   // Safely calculate total unread badge number
   const totalUnread = notifications ? notifications.reduce((acc, curr) => acc + curr.count, 0) : 0;
 
-  const handleNotificationClick = (notif) => {
-    // Dispatch an action to remove this notification from the store
-    dispatch(removeNotification({ senderId: notif.senderId, type: notif.type }));
+  // Helper function for top-level NavLinks (Adds primary border when active)
+  const getNavClass = ({ isActive }) => {
+    return `btn btn-ghost btn-sm transition-all duration-200 ${
+      isActive ? "text-primary border-b-2 border-primary rounded-b-none font-bold" : "opacity-70 hover:opacity-100"
+    }`;
+  };
 
-    // Navigate to the relevant chat or page based on notification type
+  const handleNotificationClick = (notif) => {
+    dispatch(removeNotification({ senderId: notif.senderId, type: notif.type }));
     if (notif.type === "message") {
       navigate(`/chat/${notif.senderId}`);
     } else if (notif.type === "request") {
@@ -41,11 +45,11 @@ const NavBar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-base-200 border-b border-primary/20 shadow-lg">
       <div className="flex items-center justify-between px-4 py-3">
-        {/* Logo & Title */}
-        <Link
-          to="/"
-          className="flex items-center gap-2 hover:scale-105 transition-transform duration-300"
-        >
+        
+        {/* ==========================================
+            LEFT SIDE: LOGO & TITLE
+            ========================================== */}
+        <Link to="/" className="flex items-center gap-2 hover:scale-105 transition-transform duration-300">
           <div className="avatar">
             <div className="w-10 rounded-lg ring ring-primary ring-offset-base-100 ring-offset-2">
               <img src="/DevNet F1.png" alt="DevNet Logo" />
@@ -62,17 +66,28 @@ const NavBar = () => {
           </motion.span>
         </Link>
 
-        {/* Right Side */}
+        {/* ==========================================
+            RIGHT SIDE: NAVIGATION & CONTROLS
+            ========================================== */}
         {user && (
-          <div className="flex items-center gap-4">
-            <span className="hidden sm:inline text-sm text-base-content/70">
+          <div className="flex items-center gap-3 sm:gap-4">
+            
+            {/* ✨ NEW: TOP LEVEL DESKTOP LINKS */}
+            {/* Hidden on small screens so it doesn't clutter the mobile view */}
+            <div className="hidden md:flex items-center gap-2 mr-2">
+              <NavLink to="/" className={getNavClass}>Swipe</NavLink>
+              <NavLink to="/community" className={getNavClass}>Community 🚀</NavLink>
+              <NavLink to="/connections" className={getNavClass}>Connections</NavLink>
+            </div>
+
+            <span className="hidden lg:inline text-sm text-base-content/70">
               Welcome, {user.firstName}
             </span>
 
-            {/* Theme Switcher */}
+            {/* Theme Switcher (Preserved) */}
             <ThemeSwitcher />
 
-            {/* 🔔 NOTIFICATION BELL ADDED HERE */}
+            {/* 🔔 NOTIFICATION BELL (Preserved) */}
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-circle transition-transform hover:scale-105">
                 <div className="indicator">
@@ -91,7 +106,6 @@ const NavBar = () => {
                 <li className="menu-title px-4 py-2 text-base-content font-bold border-b border-base-300">
                   Notifications
                 </li>
-                
                 {notifications && notifications.length === 0 ? (
                   <li className="px-4 py-4 text-sm opacity-60 text-center">No new notifications</li>
                 ) : (
@@ -117,45 +131,38 @@ const NavBar = () => {
               </ul>
             </div>
 
-            {/* Avatar dropdown (Untouched) */}
+            {/* 👤 AVATAR DROPDOWN (Preserved & Cleaned up) */}
             <div className="dropdown dropdown-end">
-              <button
-                tabIndex={0}
-                className="btn btn-ghost btn-circle avatar ring-2 ring-primary hover:ring-secondary transition"
-              >
+              <button tabIndex={0} className="btn btn-ghost btn-circle avatar ring-2 ring-primary hover:ring-secondary transition">
                 <div className="w-10 rounded-full">
                   <img alt="User Avatar" src={user.photoUrl} />
                 </div>
               </button>
 
-              <ul
-                tabIndex={0}
-                className="menu dropdown-content mt-3 p-2 shadow-xl bg-base-200 rounded-box w-52 z-[999]"
-              >
+              <ul tabIndex={0} className="menu dropdown-content mt-3 p-2 shadow-xl bg-base-200 rounded-box w-52 z-[999] border border-primary/10">
                 <li>
                   <Link to="/profile" className="flex justify-between">
-                    Profile
-                    <span className="badge badge-primary badge-sm">New</span>
+                    Profile <span className="badge badge-primary badge-sm">New</span>
                   </Link>
                 </li>
+                {/* These are still here for mobile users if they don't have BottomNav */}
+                <li className="md:hidden"><Link to="/">Swipe</Link></li>
+                <li className="md:hidden"><Link to="/community">Community 🚀</Link></li>
+                <li className="md:hidden"><Link to="/connections">Connections</Link></li>
+                
+                <li><Link to="/requests">Requests</Link></li>
+                <li><Link to="/premium" className="text-secondary font-bold">Premium</Link></li>
+                
+                <div className="divider my-0"></div>
+                
                 <li>
-                  <Link to="/connections">Connections</Link>
-                </li>
-                <li>
-                  <Link to="/requests">Requests</Link>
-                </li>
-                <li>
-                  <Link to="/premium" className="text-secondary">
-                    Premium
-                  </Link>
-                </li>
-                <li>
-                  <button onClick={handleLogout} className="text-error">
+                  <button onClick={handleLogout} className="text-error font-semibold hover:bg-error/10">
                     Logout
                   </button>
                 </li>
               </ul>
             </div>
+
           </div>
         )}
       </div>
