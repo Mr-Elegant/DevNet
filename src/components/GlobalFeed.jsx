@@ -17,17 +17,16 @@ const GlobalFeed = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-
-  // ✨ NEW: Tracks whether the Create Post editor is open or closed
-  const [showEditor, setShowEditor] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);     //  Tracks whether the Create Post editor is open or closed
+  const [searchText, setSearchText] = useState(""); // For the search input field
 
   // ==========================================
-  // 3. FETCH FEED LOGIC
+  // FETCH FEED LOGIC (Updated to accept searchQuery)
   // ==========================================
-  const fetchFeed = async (pageNumber = 1, isRefresh = false) => {
+  const fetchFeed = async (pageNumber = 1, isRefresh = false, query = "") => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/post/feed?page=${pageNumber}&limit=10`, {
+      const res = await axios.get(`${BASE_URL}/post/feed?page=${pageNumber}&limit=10&q=${query}`, {
         withCredentials: true,
       });
 
@@ -46,9 +45,18 @@ const GlobalFeed = () => {
     }
   };
 
+  // ==========================================
+  // DEBOUNCED SEARCH EFFECT
+  // ==========================================
   useEffect(() => {
-    fetchFeed(1, true);
-  }, []);
+    // Wait 500ms after the user stops typing to fetch the posts
+    const delayDebounceFn = setTimeout(() => {
+      setPage(1);  // Reset Pagination
+      setHasMore(true); // Reset load more button
+      fetchFeed(1, true, searchText);  // Fetch fresh data based on the search
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchText]);  // Runs every time searchText changes
 
   // ==========================================
   // 4. EVENT HANDLERS
@@ -56,15 +64,15 @@ const GlobalFeed = () => {
   const handlePostCreated = () => {
     setPage(1);
     setHasMore(true);
-    fetchFeed(1, true);
-    // ✨ NEW: Automatically close the editor after they successfully publish a post!
+    fetchFeed(1, true, searchText);
+    // Automatically close the editor after they successfully publish a post!
     setShowEditor(false); 
   };
 
   const loadMorePosts = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchFeed(nextPage, false);
+    fetchFeed(nextPage, false, searchText);  // Keep the search text active when loading more!
   };
 
   const handleLike = async (postId) => {
@@ -98,35 +106,44 @@ const GlobalFeed = () => {
   // ==========================================
   // 5. UI RENDER
   // ==========================================
-  return (
+return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       
-      {/* ✨ TOP ACTION BAR */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-base-300">
+      {/* ✨ TOP ACTION BAR (Updated with Search Input) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-base-300 gap-4">
         
-        {/* Left Side: The Toggle Button */}
-        <button 
-          onClick={() => setShowEditor(!showEditor)} 
-          className={`btn shadow-lg transition-all duration-300 ${showEditor ? 'btn-ghost text-error' : 'btn-primary hover:scale-105'}`}
-        >
-          {/* Changes text based on whether it is open or closed */}
-          {showEditor ? "✕ Cancel Post" : "✍️ Create Post"}
-        </button>
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <button 
+            onClick={() => setShowEditor(!showEditor)} 
+            className={`btn shadow-md transition-all duration-300 w-full sm:w-auto ${showEditor ? 'btn-ghost text-error' : 'btn-primary hover:scale-105'}`}
+          >
+            {showEditor ? "✕ Cancel Post" : "✍️ Create Post"}
+          </button>
+        </div>
 
-        {/* Right Side: Page Title */}
-        <h1 className="text-xl sm:text-2xl font-black text-base-content/50 uppercase tracking-widest">
-          Community Feed
-        </h1>
+        {/* The Search Bar */}
+        <div className="join w-full sm:max-w-xs shadow-sm">
+          <input 
+            type="text" 
+            placeholder="Search posts, tags, or bugs..." 
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="input input-bordered input-sm sm:input-md join-item w-full focus:outline-primary" 
+          />
+          <button className="btn btn-sm sm:btn-md btn-ghost join-item bg-base-200 border border-base-300 pointer-events-none">
+            🔍
+          </button>
+        </div>
+
       </div>
 
-      {/* ✨ THE CREATE POST EDITOR (Only renders if showEditor is true) */}
       {showEditor && (
         <div className="mb-10 transition-all duration-500 ease-in-out transform origin-top">
           <CreatePost onPostCreated={handlePostCreated} />
         </div>
       )}
 
-      {/* THE POSTS LIST */}
+      {/* THE POSTS LIST (Exactly the same as before) */}
       <div className="space-y-6">
         {posts?.map((post) => {
           const isLikedByMe = post.likes?.includes(loggedInUser?._id);
@@ -135,7 +152,6 @@ const GlobalFeed = () => {
             <div key={post._id} className="card bg-base-100 shadow-xl border border-base-300 hover:border-primary/30 transition-colors">
               <div className="card-body p-5 sm:p-7">
                 
-                {/* POST HEADER */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex gap-3 items-center">
                     <Link to={`/profile/${post.author?._id}`} className="avatar hover:opacity-80 transition-opacity">
@@ -164,7 +180,6 @@ const GlobalFeed = () => {
                   </div>
                 </div>
 
-                {/* POST BODY */}
                 {post.title && <h2 className="text-2xl font-bold mb-2">{post.title}</h2>}
                 <p className="whitespace-pre-wrap text-base-content/90 mb-4">{post.content}</p>
 
@@ -197,7 +212,6 @@ const GlobalFeed = () => {
                   </div>
                 )}
 
-                {/* POST FOOTER */}
                 <div className="flex items-center gap-6 mt-4 pt-4 border-t border-base-200">
                   <button 
                     onClick={() => handleLike(post._id)}
@@ -209,14 +223,12 @@ const GlobalFeed = () => {
                     <span className="font-semibold">{post.likes?.length || 0}</span>
                   </button>
 
-                  <button className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
-                    <Link to={`/post/${post._id}`} className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
+                  <Link to={`/post/${post._id}`} className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03-8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
                     <span className="font-semibold">{post.comments?.length || 0}</span>
-                    </Link>
-                  </button>
+                  </Link>
                 </div>
 
               </div>
@@ -224,7 +236,6 @@ const GlobalFeed = () => {
           );
         })}
 
-        {/* LOADING & EMPTY STATES */}
         {isLoading && (
           <div className="flex justify-center py-8">
             <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -239,11 +250,16 @@ const GlobalFeed = () => {
           </div>
         )}
 
-        {!hasMore && posts.length > 0 && (
+        {/* Dynamic empty state messages based on whether they are actively searching or not */}
+        {!hasMore && posts.length > 0 && !searchText && (
           <p className="text-center opacity-50 font-medium py-8">You've reached the end of the dev-verse! 🌌</p>
         )}
 
-        {!isLoading && posts.length === 0 && (
+        {!isLoading && posts.length === 0 && searchText && (
+          <p className="text-center opacity-50 font-medium py-8">No results found for "{searchText}". Try searching something else!</p>
+        )}
+
+        {!isLoading && posts.length === 0 && !searchText && (
           <p className="text-center opacity-50 font-medium py-8">No posts yet. Be the first to launch something! 🚀</p>
         )}
 

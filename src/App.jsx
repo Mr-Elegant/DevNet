@@ -13,6 +13,7 @@ import Premium from "./components/Premium";
 import Chat from "./components/Chat";
 import GlobalFeed from "./components/GlobalFeed";
 import PostDetails from "./components/PostDetails";
+import Search from "./components/Search";
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -90,6 +91,7 @@ const App = () => {
             <Route path="/chat/:targetUserId" element={<Chat />} />
             <Route path="/community" element={<GlobalFeed />} />
             <Route path="/post/:postId" element={<PostDetails />} />
+            <Route path="/search" element={<Search />} /> 
             
           </Route>
         </Routes>
