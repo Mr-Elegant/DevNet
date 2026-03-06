@@ -1,6 +1,3 @@
-// ==========================================
-// 1. IMPORTS
-// ==========================================
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
@@ -9,19 +6,30 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 const GlobalFeed = () => {
-  // ==========================================
-  // 2. STATE MANAGEMENT
-  // ==========================================
   const loggedInUser = useSelector((store) => store.user);
+  
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [showEditor, setShowEditor] = useState(false);     //  Tracks whether the Create Post editor is open or closed
-  const [searchText, setSearchText] = useState(""); // For the search input field
+  const [showEditor, setShowEditor] = useState(false);
+  const [searchText, setSearchText] = useState("");
 
   // ==========================================
-  // FETCH FEED LOGIC (Updated to accept searchQuery)
+  // ✨ NEW: EDIT POST STATES
+  // ==========================================
+  const [editingPost, setEditingPost] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    content: "",
+    codeSnippet: "",
+    codeLanguage: "javascript",
+    tags: ""
+  });
+
+  // ==========================================
+  // FETCH FEED LOGIC
   // ==========================================
   const fetchFeed = async (pageNumber = 1, isRefresh = false, query = "") => {
     setIsLoading(true);
@@ -45,34 +53,30 @@ const GlobalFeed = () => {
     }
   };
 
-  // ==========================================
-  // DEBOUNCED SEARCH EFFECT
-  // ==========================================
   useEffect(() => {
-    // Wait 500ms after the user stops typing to fetch the posts
     const delayDebounceFn = setTimeout(() => {
-      setPage(1);  // Reset Pagination
-      setHasMore(true); // Reset load more button
-      fetchFeed(1, true, searchText);  // Fetch fresh data based on the search
+      setPage(1); 
+      setHasMore(true); 
+      fetchFeed(1, true, searchText); 
     }, 500);
+
     return () => clearTimeout(delayDebounceFn);
-  }, [searchText]);  // Runs every time searchText changes
+  }, [searchText]); 
 
   // ==========================================
-  // 4. EVENT HANDLERS
+  // POST ACTIONS (Create, Like, Delete)
   // ==========================================
   const handlePostCreated = () => {
     setPage(1);
     setHasMore(true);
     fetchFeed(1, true, searchText);
-    // Automatically close the editor after they successfully publish a post!
     setShowEditor(false); 
   };
 
   const loadMorePosts = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchFeed(nextPage, false, searchText);  // Keep the search text active when loading more!
+    fetchFeed(nextPage, false, searchText); 
   };
 
   const handleLike = async (postId) => {
@@ -94,6 +98,65 @@ const GlobalFeed = () => {
     }
   };
 
+  const handleDeletePost = async (postId) => {
+    const isConfirmed = window.confirm("Are you sure you want to delete this post? This cannot be undone.");
+    if (!isConfirmed) return;
+
+    try {
+      await axios.delete(`${BASE_URL}/post/${postId}`, { withCredentials: true });
+      setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      alert("Failed to delete the post.");
+    }
+  };
+
+  // ==========================================
+  // ✨ NEW: EDIT POST HANDLERS
+  // ==========================================
+  const openEditModal = (post) => {
+    setEditingPost(post);
+    setEditForm({
+      title: post.title || "",
+      content: post.content || "",
+      codeSnippet: post.codeSnippet || "",
+      codeLanguage: post.codeLanguage || "javascript",
+      // Convert the tags array back into a comma-separated string for the input box
+      tags: post.tags ? post.tags.join(", ") : ""
+    });
+    document.getElementById("edit_post_modal").showModal();
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsUpdating(true);
+
+    try {
+      // Convert the comma-separated string back into a clean array
+      const tagsArray = editForm.tags.split(",").map(tag => tag.trim()).filter(tag => tag !== "");
+
+      const res = await axios.patch(
+        `${BASE_URL}/post/${editingPost._id}`,
+        {
+          ...editForm,
+          tags: tagsArray
+        },
+        { withCredentials: true }
+      );
+
+      // Optimistic UI Update: Swap the old post with the newly edited one returned from the server!
+      setPosts((prevPosts) => prevPosts.map((p) => (p._id === editingPost._id ? res.data.data : p)));
+      
+      document.getElementById("edit_post_modal").close();
+      setEditingPost(null);
+    } catch (error) {
+      console.error("Failed to update post:", error);
+      alert("Failed to update post.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const formatTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -103,15 +166,11 @@ const GlobalFeed = () => {
     return `${Math.floor(diffInHours / 24)}d ago`;
   };
 
-  // ==========================================
-  // 5. UI RENDER
-  // ==========================================
-return (
+  return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       
-      {/* ✨ TOP ACTION BAR (Updated with Search Input) */}
+      {/* TOP ACTION BAR */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-base-300 gap-4">
-        
         <div className="flex items-center gap-4 w-full sm:w-auto">
           <button 
             onClick={() => setShowEditor(!showEditor)} 
@@ -120,8 +179,6 @@ return (
             {showEditor ? "✕ Cancel Post" : "✍️ Create Post"}
           </button>
         </div>
-
-        {/* The Search Bar */}
         <div className="join w-full sm:max-w-xs shadow-sm">
           <input 
             type="text" 
@@ -130,11 +187,8 @@ return (
             onChange={(e) => setSearchText(e.target.value)}
             className="input input-bordered input-sm sm:input-md join-item w-full focus:outline-primary" 
           />
-          <button className="btn btn-sm sm:btn-md btn-ghost join-item bg-base-200 border border-base-300 pointer-events-none">
-            🔍
-          </button>
+          <button className="btn btn-sm sm:btn-md btn-ghost join-item bg-base-200 border border-base-300 pointer-events-none">🔍</button>
         </div>
-
       </div>
 
       {showEditor && (
@@ -143,7 +197,7 @@ return (
         </div>
       )}
 
-      {/* THE POSTS LIST (Exactly the same as before) */}
+      {/* THE POSTS LIST */}
       <div className="space-y-6">
         {posts?.map((post) => {
           const isLikedByMe = post.likes?.includes(loggedInUser?._id);
@@ -171,12 +225,34 @@ return (
                     </div>
                   </div>
 
-                  <div className={`badge badge-sm sm:badge-md font-bold uppercase tracking-wider ${
-                    post.type === "launch" ? "badge-success" :
-                    post.type === "question" ? "badge-error" :
-                    post.type === "article" ? "badge-info" : "badge-primary"
-                  }`}>
-                    {post.type}
+                  {/* BADGE & DROPDOWN MENU */}
+                  <div className="flex flex-col items-end gap-2">
+                    <div className={`badge badge-sm sm:badge-md font-bold uppercase tracking-wider ${
+                      post.type === "launch" ? "badge-success" : post.type === "question" ? "badge-error" : post.type === "article" ? "badge-info" : "badge-primary"
+                    }`}>
+                      {post.type}
+                    </div>
+
+                    {/* ✨ UPDATED: 3-Dot Menu hooked up to the Edit function */}
+                    {loggedInUser?._id === post.author?._id && (
+                      <div className="dropdown dropdown-end">
+                        <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-circle opacity-50 hover:opacity-100">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-5 h-5 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                        </div>
+                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-200 rounded-box w-32 border border-base-300">
+                          <li>
+                            <a onClick={() => openEditModal(post)} className="hover:text-primary font-semibold">
+                              ✏️ Edit
+                            </a>
+                          </li>
+                          <li>
+                            <a onClick={() => handleDeletePost(post._id)} className="text-error hover:bg-error hover:text-white font-semibold mt-1">
+                              🗑️ Delete
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -213,10 +289,7 @@ return (
                 )}
 
                 <div className="flex items-center gap-6 mt-4 pt-4 border-t border-base-200">
-                  <button 
-                    onClick={() => handleLike(post._id)}
-                    className={`flex items-center gap-2 transition-transform active:scale-90 ${isLikedByMe ? "text-error" : "hover:text-error opacity-70"}`}
-                  >
+                  <button onClick={() => handleLike(post._id)} className={`flex items-center gap-2 transition-transform active:scale-90 ${isLikedByMe ? "text-error" : "hover:text-error opacity-70"}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isLikedByMe ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isLikedByMe ? 0 : 2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
@@ -230,40 +303,104 @@ return (
                     <span className="font-semibold">{post.comments?.length || 0}</span>
                   </Link>
                 </div>
-
               </div>
             </div>
           );
         })}
 
-        {isLoading && (
-          <div className="flex justify-center py-8">
-            <span className="loading loading-spinner loading-lg text-primary"></span>
-          </div>
-        )}
-
+        {isLoading && <div className="flex justify-center py-8"><span className="loading loading-spinner loading-lg text-primary"></span></div>}
         {!isLoading && hasMore && posts.length > 0 && (
           <div className="flex justify-center pt-4">
-            <button onClick={loadMorePosts} className="btn btn-outline btn-primary rounded-full px-8">
-              Load More Posts ↓
-            </button>
+            <button onClick={loadMorePosts} className="btn btn-outline btn-primary rounded-full px-8">Load More Posts ↓</button>
           </div>
         )}
-
-        {/* Dynamic empty state messages based on whether they are actively searching or not */}
-        {!hasMore && posts.length > 0 && !searchText && (
-          <p className="text-center opacity-50 font-medium py-8">You've reached the end of the dev-verse! 🌌</p>
-        )}
-
-        {!isLoading && posts.length === 0 && searchText && (
-          <p className="text-center opacity-50 font-medium py-8">No results found for "{searchText}". Try searching something else!</p>
-        )}
-
-        {!isLoading && posts.length === 0 && !searchText && (
-          <p className="text-center opacity-50 font-medium py-8">No posts yet. Be the first to launch something! 🚀</p>
-        )}
-
+        {!hasMore && posts.length > 0 && !searchText && <p className="text-center opacity-50 font-medium py-8">You've reached the end of the dev-verse! 🌌</p>}
+        {!isLoading && posts.length === 0 && searchText && <p className="text-center opacity-50 font-medium py-8">No results found for "{searchText}". Try searching something else!</p>}
+        {!isLoading && posts.length === 0 && !searchText && <p className="text-center opacity-50 font-medium py-8">No posts yet. Be the first to launch something! 🚀</p>}
       </div>
+
+      {/* ==========================================
+          ✨ NEW: THE EDIT MODAL
+          ========================================== */}
+      <dialog id="edit_post_modal" className="modal modal-bottom sm:modal-middle">
+        <div className="modal-box bg-base-100 border border-primary/20">
+          <h3 className="font-bold text-xl mb-4 text-primary">Edit Post</h3>
+          
+          <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
+            <input 
+              type="text" 
+              placeholder="Post Title (Optional)" 
+              value={editForm.title} 
+              onChange={(e) => setEditForm({...editForm, title: e.target.value})} 
+              className="input input-bordered w-full font-bold" 
+            />
+            
+            <textarea 
+              placeholder="What do you want to share with the dev community?" 
+              value={editForm.content} 
+              onChange={(e) => setEditForm({...editForm, content: e.target.value})} 
+              className="textarea textarea-bordered h-32 w-full text-base leading-relaxed" 
+              required
+            ></textarea>
+            
+            {editForm.codeSnippet !== "" && (
+              <div className="p-4 bg-base-200 rounded-xl border border-base-300">
+                <p className="text-xs font-bold mb-2 opacity-50 uppercase tracking-wider">Code Snippet</p>
+                <div className="flex gap-2 mb-2">
+                  <select 
+                    value={editForm.codeLanguage} 
+                    onChange={(e) => setEditForm({...editForm, codeLanguage: e.target.value})} 
+                    className="select select-sm select-bordered max-w-xs"
+                  >
+                    <option value="javascript">JavaScript / JSX</option>
+                    <option value="python">Python</option>
+                    <option value="html">HTML / CSS</option>
+                    <option value="java">Java</option>
+                    <option value="cpp">C++</option>
+                    <option value="json">JSON</option>
+                    <option value="bash">Terminal / Bash</option>
+                  </select>
+                </div>
+                <textarea 
+                  value={editForm.codeSnippet} 
+                  onChange={(e) => setEditForm({...editForm, codeSnippet: e.target.value})} 
+                  className="textarea textarea-bordered w-full font-mono text-sm h-32 bg-neutral text-neutral-content" 
+                ></textarea>
+              </div>
+            )}
+
+            <input 
+              type="text" 
+              placeholder="Tags (comma separated, e.g. React, Node.js)" 
+              value={editForm.tags} 
+              onChange={(e) => setEditForm({...editForm, tags: e.target.value})} 
+              className="input input-bordered input-sm w-full" 
+            />
+
+            <div className="modal-action mt-2">
+              <button 
+                type="button" 
+                className="btn" 
+                onClick={() => {
+                  document.getElementById("edit_post_modal").close();
+                  setEditingPost(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={isUpdating}>
+                {isUpdating ? <span className="loading loading-spinner loading-sm"></span> : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        {/* Click outside to close */}
+        <form method="dialog" className="modal-backdrop">
+          <button onClick={() => setEditingPost(null)}>close</button>
+        </form>
+      </dialog>
+
     </div>
   );
 };
