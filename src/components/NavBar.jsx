@@ -6,6 +6,8 @@ import { removeUser } from "../utils/userSlice";
 import { removeNotification } from "../utils/notificationSlice";
 import { motion } from "framer-motion";
 import ThemeSwitcher from "./ThemeSwitcher";
+// ✨ IMPORT THE BADGE HERE
+import VerifiedBadge from "./VerifiedBadge"; 
 
 const NavBar = () => {
   const user = useSelector((store) => store.user);
@@ -79,7 +81,7 @@ const NavBar = () => {
             ========================================== */}
         {user && (
           <div className="flex items-center gap-3 sm:gap-4">
-            {/* ✨ NEW: TOP LEVEL DESKTOP LINKS */}
+            {/* ✨ TOP LEVEL DESKTOP LINKS */}
             {/* Hidden on small screens so it doesn't clutter the mobile view */}
             <div className="hidden md:flex items-center gap-2 mr-2">
               <NavLink to="/search" className={getNavClass}>
@@ -110,8 +112,10 @@ const NavBar = () => {
               </NavLink>
             </div>
 
-            <span className="hidden lg:inline text-sm text-base-content/70">
+            {/* ✨ UPDATED: Added flex and items-center to align the badge perfectly with the text */}
+            <span className="hidden lg:flex items-center gap-1 text-sm text-base-content/70 font-medium">
               Welcome, {user.firstName}
+              <VerifiedBadge isPremium={user.isPremium} membershipType={user.membershipType} /> {/* 👈 Blue Tick inserted here! */}
             </span>
 
             {/* Theme Switcher (Preserved) */}
@@ -170,7 +174,7 @@ const NavBar = () => {
                             <span className="font-semibold text-primary">
                               {notif.type === "message"
                                 ? "💬 New Message"
-                                : "👤 Friend Request"}
+                                : "🤝 Friend Request"}
                             </span>
                             {notif.count > 1 && (
                               <span className="badge badge-xs badge-secondary">

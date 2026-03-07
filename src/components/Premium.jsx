@@ -1,55 +1,89 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { BASE_URL } from "../utils/constants";
+import { addUser } from "../utils/userSlice";
 
 const Premium = () => {
+  const user = useSelector((store) => store.user);
+  const dispatch = useDispatch();
+  
   const [isUserPremium, setIsUserPremium] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    verifyPremiumUser();
-  }, []);
+    if (user?.isPremium) {
+      setIsUserPremium(true);
+    } else {
+      verifyPremiumUser();
+    }
+  }, [user]);
 
   const verifyPremiumUser = async () => {
-    const res = await axios.get(BASE_URL + "/premium/verify", {
-      withCredentials: true,
-    });
+    try {
+      const res = await axios.get(BASE_URL + "/premium/verify", {
+        withCredentials: true,
+      });
 
-    if (res.data.isPremium) {
-      setIsUserPremium(true);
+      if (res.data.isPremium) {
+        setIsUserPremium(true);
+        // Instantly update Redux so the Blue Tick appears everywhere
+        dispatch(addUser(res.data)); 
+      }
+    } catch (error) {
+      console.error("Verification failed:", error);
     }
   };
 
   const handleBuyClick = async (type) => {
-    const order = await axios.post(
-      BASE_URL + "/payment/create",
-      {
-        membershipType: type,
-      },
-      { withCredentials: true }
-    );
+    if (!window.Razorpay) {
+      alert("Razorpay SDK failed to load. Are you online?");
+      return;
+    }
 
-    const { amount, keyId, currency, notes, orderId } = order.data;
+    setIsProcessing(true);
 
-    const options = {
-      key: keyId,
-      amount,
-      currency,
-      name: "DevNet",
-      description: "Lets Connect with fellow devs",
-      order_id: orderId,
-      prefill: {
-        name: notes.firstName + " " + notes.lastName,
-        email: notes.emailId,
-        contact: "8572874207",
-      },
-      theme: {
-        color: "#FD3FCA",
-      },
-      handler: verifyPremiumUser,
-    };
+    try {
+      const order = await axios.post(
+        BASE_URL + "/payment/create",
+        { membershipType: type },
+        { withCredentials: true }
+      );
 
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+      const { amount, keyId, currency, notes, orderId } = order.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name: "DevNet Premium",
+        description: `Upgrade to ${type.toUpperCase()} Plan`,
+        order_id: orderId,
+        prefill: {
+          name: notes.firstName + " " + notes.lastName,
+          email: notes.emailId,
+        },
+        theme: {
+          color: "#FD3FCA",
+        },
+        handler: async function (response) {
+          await verifyPremiumUser();
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      
+      rzp.on('payment.failed', function (response){
+        alert("Payment Failed. Please try again.");
+      });
+
+      rzp.open();
+    } catch (error) {
+      console.error("Order creation failed:", error);
+      alert("Failed to initialize payment gateway.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return isUserPremium ? (
@@ -85,30 +119,20 @@ const Premium = () => {
             <div className="text-4xl font-bold my-4">₹0</div>
 
             <ul className="space-y-2 text-sm text-base-content/70">
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Basic Access
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Limited Features
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-error">✗</span> No Analytics
-              </li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Basic Access</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Limited Features</li>
+              <li className="flex items-center gap-2"><span className="text-error">✗</span> No Analytics</li>
             </ul>
 
             <div className="card-actions mt-6">
-              <button className="btn btn-outline w-full" disabled>
-                Current Plan
-              </button>
+              <button className="btn btn-outline w-full" disabled>Current Plan</button>
             </div>
           </div>
         </div>
 
         {/* Silver Plan */}
         <div className="card w-96 bg-base-200 shadow-2xl border-2 border-primary hover:scale-[1.05] transition-all duration-300 relative">
-          <div className="badge badge-primary absolute right-4 top-4">
-            POPULAR
-          </div>
+          <div className="badge badge-primary absolute right-4 top-4">POPULAR</div>
           <div className="card-body">
             <h2 className="card-title text-2xl">Silver</h2>
             <div className="flex items-baseline gap-1">
@@ -117,29 +141,16 @@ const Premium = () => {
             </div>
 
             <ul className="space-y-2 text-sm text-base-content/70 my-4">
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> All Free Features
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Chat with other people
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> 100 requests/day
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Blue Tick
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> 1 year access
-              </li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> All Free Features</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Chat with other people</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> 100 requests/day</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Blue Tick</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> 1 year access</li>
             </ul>
 
             <div className="card-actions mt-6">
-              <button
-                onClick={() => handleBuyClick("silver")}
-                className="btn btn-primary w-full"
-              >
-                Get Silver
+              <button onClick={() => handleBuyClick("silver")} disabled={isProcessing} className="btn btn-primary w-full">
+                {isProcessing ? "Processing..." : "Get Silver"}
               </button>
             </div>
           </div>
@@ -155,32 +166,17 @@ const Premium = () => {
             </div>
 
             <ul className="space-y-2 text-sm text-base-content/70 my-4">
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> All Silver Features
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Priority Support
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Unlimited requests
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Unlimited Posting
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> Lifetime access
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-success">✓</span> AI Support
-              </li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> All Silver Features</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Priority Support</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Unlimited requests</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Unlimited Posting</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> Lifetime access</li>
+              <li className="flex items-center gap-2"><span className="text-success">✓</span> AI Support</li>
             </ul>
 
             <div className="card-actions mt-6">
-              <button
-                onClick={() => handleBuyClick("gold")}
-                className="btn btn-warning w-full"
-              >
-                Get Gold
+              <button onClick={() => handleBuyClick("gold")} disabled={isProcessing} className="btn btn-warning w-full">
+                {isProcessing ? "Processing..." : "Get Gold"}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { BASE_URL } from "../utils/constants";
 import CreatePost from "./CreatePost";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import VerifiedBadge from "./VerifiedBadge";
 
 const GlobalFeed = () => {
   const loggedInUser = useSelector((store) => store.user);
@@ -216,6 +217,10 @@ const GlobalFeed = () => {
                     <div>
                       <Link to={`/profile/${post.author?._id}`} className="font-bold text-lg hover:text-primary transition-colors">
                         {post.author?.firstName} {post.author?.lastName}
+                        <VerifiedBadge 
+    isPremium={post.author?.isPremium} 
+    membershipType={post.author?.membershipType} // 👈 Add this line!
+  />
                       </Link>
                       <div className="text-xs opacity-60 flex gap-2 items-center">
                         <span>{post.author?.headline || "Developer"}</span>
