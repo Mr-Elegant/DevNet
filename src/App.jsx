@@ -14,6 +14,7 @@ import Chat from "./components/Chat";
 import GlobalFeed from "./components/GlobalFeed";
 import PostDetails from "./components/PostDetails";
 import Search from "./components/Search";
+import SpiderCursor from "./components/SpiderCursor";
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -25,6 +26,9 @@ const App = () => {
 
   return (
     <div className="min-h-screen w-full relative bg-base-100">
+
+      <SpiderCursor />
+
       {/* Dashed Bottom Left Fade Grid */}
       <div
         className="absolute inset-0 z-0"
