@@ -1,59 +1,121 @@
-# 🕸️ DevNet - The Ultimate Developer Networking Platform
+# 🚀 DevNet: The MatchMaker for Developers
 
-DevNet is a full-stack, production-grade social networking and community platform built exclusively for developers. It combines the engaging UX of modern dating apps (Tinder-style swiping) with the deep technical requirements of software engineering (Code snippets, Markdown blogs, Portfolios, and Real-time WebSockets).
+**DevNet** is a full-stack, real-time social networking and portfolio-sharing platform built exclusively for developers. It combines the discovery mechanics of modern dating apps with the professional networking power of LinkedIn, allowing developers to connect, share code, collaborate on projects, and chat in real-time.
 
----
+## ✨ Key Features
 
-## ✨ Core Features & Architecture
-
-### 🚀 1. Matchmaking (Tinder-Style Swiping)
-* **Interactive Swipe Deck:** Buttery-smooth spring-physics card swiping using `react-tinder-card`.
-* **Dynamic Feedback Stamps:** Physical-feeling "LIKE" and "NOPE" stamp overlays that react to drag distance and intent.
-* **Instant Notifications:** A right-swipe instantly triggers a global push notification via WebSockets to the target user.
-
-### 💬 2. Real-Time Chat Engine (WhatsApp-Style)
-* **Global Online Presence:** Real-time online/offline status indicators tracked globally across the app.
-* **Advanced Read Receipts:** Highly accurate message status tracking (✓ Sent, ✓✓ Delivered, **✓✓ Read**).
-* **Offline Catch-Up Sync:** Backend listener instantly syncs and updates pending deliveries the moment a user reconnects.
-* **Universal File Sharing:** Secure upload pipeline via Cloudinary supporting images, PDFs, ZIPs, and DOCs.
-* **Security:** Deterministic private room IDs secured using a `crypto` SHA-256 hash of both users' MongoDB Object IDs.
-
-### 🌐 3. Polymorphic Developer Community Feed
-* **Unified Post Architecture:** A single MongoDB model powering four distinct content types:
-  * **⚡ Dev Logs:** Short-form updates with syntax-highlighted code blocks.
-  * **📝 Articles:** Long-form, Markdown-supported tutorials.
-  * **🐛 Q&A / Bug Squashing:** StackOverflow-style questions where the author can mark comments as the "Accepted Answer".
-  * **🚀 Project Launches:** Automated rich-media cards showcasing new portfolio additions.
-* **Optimistic UI Updates:** Likes and comments update instantly on the screen while the API processes in the background.
-
-### 💻 4. Developer Portfolios
-* **Visual Showcases:** Users can upload app screenshots, add live deployment URLs, and link GitHub repositories.
-* **Tech Stack Badges:** Auto-formatted tag generation for languages and frameworks used.
+* **Developer Discovery (Swiping Feed):** Discover new developers via a Tinder-style swiping interface. Swipe right to send a connection request, or left to ignore.
+* **Real-Time Chat Engine:** Instant 1-on-1 messaging powered by Socket.io, complete with online/offline status indicators, typing indicators, read receipts, and file/image sharing.
+* **Global Community Feed:** Share updates, ask technical questions, or launch projects. Includes support for code snippets with syntax highlighting, image attachments, nested comments, and "Accepted Answer" Q&A mechanics.
+* **Advanced User Profiles:** * **Portfolio Manager:** Upload and showcase personal projects with live URLs and screenshots.
+    * **GitHub Integration:** Link your GitHub account to automatically display your top repositories and stats directly on your profile.
+* **Premium Memberships:** Monetization via Razorpay integration, offering Silver and Gold tiers for exclusive platform features and verified profile badges.
+* **Smart Notifications & Emails:** In-app real-time notification badges, plus a background Node-Cron job that sends daily digest emails via AWS SES to users with pending connection requests.
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Frontend:** React 19, Vite, Redux Toolkit, React Router, Tailwind CSS, daisyUI.
-* **Backend:** Node.js, Express, MongoDB, Mongoose, Socket.io, Crypto.
-* **Cloud & DevOps:** AWS EC2, Nginx, PM2, Cloudflare (DNS/SSL).
-* **Microservices:** AWS SES (Emails), node-cron & bee-queue (Job Scheduling), Cloudinary (Media), Razorpay (Payments).
+**Frontend**
+* **Framework:** React 19 (Vite)
+* **Styling:** Tailwind CSS v4 & DaisyUI
+* **State Management:** Redux Toolkit (Separated slices for user, feed, connections, requests, themes, and notifications)
+* **Routing:** React Router v7
+* **Real-time & Animation:** Socket.io-client, Framer Motion, React Tinder Card
+
+**Backend**
+* **Runtime:** Node.js
+* **Framework:** Express.js
+* **Database:** MongoDB (Mongoose ORM)
+* **Authentication:** JWT (JSON Web Tokens) stored in `httpOnly` cookies & bcrypt password hashing
+* **Real-time:** Socket.io
+
+**Cloud & Third-Party Services**
+* **AWS SES:** Automated daily transactional emails.
+* **Cloudinary:** Secure image and file storage for profiles and chats.
+* **Razorpay:** Payment gateway processing and webhooks.
 
 ---
 
-## 🚀 Local Development Setup (Step-by-Step)
+## ⚙️ Local Setup & Installation
 
-Follow these steps to run the DevNet environment on your local machine.
+Follow these steps to get the project running on your local machine.
 
-**1. Clone the repository & Install Dependencies**
-```bash
-git clone [https://github.com/Mr_Eleagnt/DevNet.git](https://github.com/Mr_Elegant/DevNet.git)
-cd DevNet
+### 1. Prerequisites
+* Node.js (v18 or higher recommended)
+* MongoDB (Local instance or MongoDB Atlas cluster)
 
-# Install Backend Dependencies
+### 2. Clone the Repository
+\`\`\`bash
+git clone https://github.com/your-username/devnet.git
+cd devnet
+\`\`\`
+
+### 3. Environment Variables
+Create a `.env` file in the root of your **backend** directory and add the following keys. You will need to obtain API keys from MongoDB, AWS, Razorpay, and Cloudinary:
+
+\`\`\`env
+# Database
+MONGO_URI=your_mongodb_connection_string
+
+# Authentication
+JWT_SECRET=your_super_secret_jwt_key
+
+# AWS SES (Emails)
+AWS_ACCESS_KEY=your_aws_access_key
+AWS_SECRET_KEY=your_aws_secret_key
+AWS_REGION=ap-south-1
+
+# Razorpay (Payments)
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+RAZORPAY_WEBHOOK_SECRET=your_custom_webhook_secret
+
+# Cloudinary (Image/File Uploads)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+\`\`\`
+
+### 4. Install Dependencies
+Open two terminal windows/tabs—one for the frontend and one for the backend.
+
+**Backend Terminal:**
+\`\`\`bash
 cd backend
 npm install
+\`\`\`
 
-# Install Frontend Dependencies (Using legacy-peer-deps for React 19 compatibility)
-cd ../frontend
-npm install --legacy-peer-deps
+**Frontend Terminal:**
+\`\`\`bash
+cd frontend
+npm install
+\`\`\`
+
+### 5. Run the Application
+
+**Start the Backend server (runs on port 3000):**
+\`\`\`bash
+cd backend
+npm run dev
+\`\`\`
+
+**Start the Frontend development server (runs on port 5173):**
+\`\`\`bash
+cd frontend
+npm run dev
+\`\`\`
+
+Open your browser and navigate to `http://localhost:5173` to see the app running!
+
+---
+
+## 🏗️ Architecture & Deployment
+
+DevNet is designed to be deployed on an AWS EC2 instance. 
+* **Reverse Proxy:** Nginx is used on port 80 to serve the static frontend `dist` build and proxy `/api` and WebSocket requests to the Node.js backend running on port 3000.
+* **Process Management:** PM2 is recommended for keeping the backend Node.js process alive in production.
+
+---
+
+> **Note:** This project relies on a daily Cron job to send email digests. Ensure your production server timezone is configured correctly so that emails dispatch at the intended local time (8:00 AM).

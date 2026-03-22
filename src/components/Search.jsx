@@ -82,7 +82,6 @@ const Search = () => {
             </Link>
             
             <div className="flex-1 overflow-hidden">
-              {/* ✨ ADDED BADGE HERE - Wrapped in flex box to keep text truncation clean */}
               <Link to={`/profile/${user._id}`} className="font-bold text-lg hover:text-primary flex items-center gap-1 overflow-hidden">
                 <span className="truncate">{user.firstName} {user.lastName}</span>
                 <VerifiedBadge isPremium={user.isPremium} membershipType={user.membershipType} />
@@ -91,9 +90,14 @@ const Search = () => {
             </div>
 
             <div>
-              {sentRequests.has(user._id) ? (
+              {/* ✨ NEW LOGIC: Checks if user is already a friend or request is pending */}
+              {user.connectionStatus === "accepted" ? (
+                <button className="btn btn-sm btn-secondary btn-outline cursor-default">
+                  🤝 Friend
+                </button>
+              ) : user.connectionStatus === "interested" || sentRequests.has(user._id) ? (
                 <button className="btn btn-sm btn-success btn-outline cursor-default">
-                  ✓ Sent
+                  ✓ Pending
                 </button>
               ) : (
                 <button 
