@@ -16,10 +16,9 @@ const EditProfile = ({ user }) => {
   const [showToast, setShowToast] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-
   const dispatch = useDispatch();
 
-  // 👈 NEW: Secure Image Upload Handler
+  // 👈 NEW: Secure Image Upload & Auto-Save Handler
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -28,16 +27,32 @@ const EditProfile = ({ user }) => {
     setError(""); // Clear any previous errors
 
     const formData = new FormData();
-    formData.append("image", file); // Must match backend upload.single("image")
+    formData.append("file", file); // Must match backend upload.single("file")
 
     try {
-      const res = await axios.post(`${BASE_URL}/uploadImage`, formData, {
+      // 1. Upload the image to Cloudinary
+      const uploadRes = await axios.post(`${BASE_URL}/uploadFile`, formData, {
         withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
+      
+      const newPhotoUrl = uploadRes.data.fileUrl;
+      
+      // 2. Instantly update the local preview card & form input
+      setPhotoUrl(newPhotoUrl); 
 
-      // Instantly update the form and the live preview card!
-      setPhotoUrl(res.data.imageUrl);
+      // 3. AUTO-SAVE: Send the new Cloudinary URL directly to your database
+      const updateRes = await axios.patch(
+        `${BASE_URL}/profile/edit`, 
+        { photoUrl: newPhotoUrl }, // Only update the photo field
+        { withCredentials: true }
+      );
+
+      // 4. Update the global Redux store so the navbar avatar updates instantly too!
+      dispatch(addUser(updateRes.data.data));
+
     } catch (err) {
       console.error("Profile picture upload failed:", err);
       setError("Failed to upload image. Please try again.");
@@ -45,8 +60,6 @@ const EditProfile = ({ user }) => {
       setIsUploading(false);
     }
   };
-
-
 
   const saveProfile = async () => {
     setError("");
@@ -75,7 +88,7 @@ const EditProfile = ({ user }) => {
       setTimeout(() => setShowToast(false), 3000);
     } catch (err) {
       console.error(err);
-      setError(err.response.data || "Something went wrong.");
+      setError(err.response?.data || "Something went wrong.");
     }
   };
 
