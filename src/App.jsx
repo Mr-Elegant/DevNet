@@ -15,6 +15,7 @@ import GlobalFeed from "./components/GlobalFeed";
 import PostDetails from "./components/PostDetails";
 import Search from "./components/Search";
 import SpiderCursor from "./components/SpiderCursor";
+import ViewProfile from "./components/ViewProfile";
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -89,6 +90,7 @@ const App = () => {
           <Route path="/" element={<Body />}>
             <Route index element={<Feed />} />           
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/:userId" element={<ViewProfile />} />
             <Route path="/connections" element={<Connections />} />
             <Route path="/requests" element={<Requests />}  /> 
             <Route path="/premium" element={<Premium />}  /> 
@@ -96,6 +98,7 @@ const App = () => {
             <Route path="/community" element={<GlobalFeed />} />
             <Route path="/post/:postId" element={<PostDetails />} />
             <Route path="/search" element={<Search />} /> 
+            
             
           </Route>
         </Routes>
