@@ -1,14 +1,25 @@
 import { useState, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useSocket } from "../utils/SocketContext";
 import EmojiPicker from "emoji-picker-react"; // 👈 New Import
+import {
+  Send,
+  Image as ImageIcon,
+  Smile,
+  Trash2,
+  PenTool,
+  ChevronDown,
+  ArrowLeft,
+  FileText, // ✨ Import FileText icon
+} from "lucide-react";
 
 const Chat = () => {
   const { targetUserId } = useParams();
   const socket = useSocket();
+  const navigate = useNavigate();
 
   const messagesContainerRef = useRef(null);
   const bottomRef = useRef(null);
@@ -40,6 +51,22 @@ const Chat = () => {
   const targetUser =
     state?.user || connections?.find((c) => c._id === targetUserId);
 
+  const handleWhiteboardInvite = () => {
+    if (socket && roomId && targetUserId && user) {
+      socket.emit("whiteboard-invite", {
+        targetUserId: targetUserId,
+        roomId: roomId,
+        senderInfo: {
+          _id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
+      // Navigate the inviter to the whiteboard immediately
+      navigate(`/whiteboard/${roomId}`);
+    }
+  };
+
   // 1. Fetch Chat History
   const fetchChat = async () => {
     try {
@@ -59,7 +86,7 @@ const Chat = () => {
         lastName: m.senderId?.lastName || "",
         text: m.text,
         image: m.image, // 👈 Added image field
-        file: m.fileUrl, // 👈 Added file field
+        fileUrl: m.fileUrl, // 👈 Corrected from 'file' to 'fileUrl'
         fileName: m.fileName, // 👈 Added file name for display
         createdAt: m.createdAt,
         status: m.status,
@@ -309,11 +336,14 @@ const Chat = () => {
 
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="card bg-base-200 shadow-xl border border-primary/20 max-w-4xl mx-auto h-[75vh] flex flex-col">
+    <div className="container mx-auto p-2 sm:p-4 h-[calc(100vh-4.5rem)] max-w-5xl">
+      <div className="bg-base-200/50 backdrop-blur-md shadow-2xl rounded-3xl border border-primary/10 h-full flex flex-col overflow-hidden">
         {/* Chat Header */}
-        <div className="p-3 border-b border-base-300">
+        <div className="p-3 sm:p-4 bg-base-200/90 backdrop-blur-md border-b border-base-300 flex items-center justify-between z-10 shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle btn-sm md:hidden">
+              <ArrowLeft size={20} />
+            </button>
             {targetUser?.photoUrl && (
               <div className={`avatar ${isOnline ? "online" : ""}`}>
                 <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
@@ -335,8 +365,21 @@ const Chat = () => {
                 )}
               </div>
             </div>
+          </div>
 
-            <div className="ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3">
+              {/* ✨ NEW: Collaborative Whiteboard Button */}
+              {roomId && (
+                <button
+                  onClick={handleWhiteboardInvite}
+                  className="btn btn-sm btn-outline btn-primary tooltip tooltip-bottom rounded-full px-3 sm:px-4"
+                  data-tip="Start Collaborative Whiteboard"
+                >
+                  <PenTool size={16} className="sm:mr-1" />
+                  <span className="hidden sm:inline">Whiteboard</span>
+                </button>
+              )}
+
               <div
                 className={`badge badge-xs ${
                   socket?.connected ? "badge-success" : "badge-error"
@@ -344,14 +387,13 @@ const Chat = () => {
               >
                 {socket?.connected ? "●" : "○"}
               </div>
-            </div>
-          </div>
+        </div>
         </div>
 
         {/* Messages Container */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-4 space-y-4"
+          className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 scroll-smooth bg-base-100/30"
         >
           {messages.map((msg, index) => {
             const showDate =
@@ -362,8 +404,10 @@ const Chat = () => {
             return (
               <div key={`${msg._id}-${msg.status}`}>
                 {showDate && (
-                  <div className="divider text-xs opacity-60">
-                    {formatDateLabel(msg.createdAt)}
+                  <div className="flex justify-center my-3">
+                    <span className="text-xs bg-base-300/80 text-base-content/70 px-4 py-1 rounded-full font-medium shadow-sm backdrop-blur-sm">
+                      {formatDateLabel(msg.createdAt)}
+                    </span>
                   </div>
                 )}
 
@@ -383,10 +427,10 @@ const Chat = () => {
                   </div>
 
                   <div
-                    className={`chat-bubble ${
+                    className={`chat-bubble shadow-sm ${
                       msg.senderId === userId
                         ? "chat-bubble-primary"
-                        : "chat-bubble-secondary"
+                        : "bg-base-100 text-base-content border border-base-300"
                     }`}
                   >
                     {/* Render Image */}
@@ -396,8 +440,8 @@ const Chat = () => {
 
                     {/* 👈 NEW: Render Generic File (PDF, ZIP, etc) */}
                     {msg.fileUrl && (
-                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 bg-base-100/20 p-3 rounded-lg hover:bg-base-100/40 transition mb-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-base-100/20 p-3 rounded-lg hover:bg-base-100/40 transition mb-2">
+                        <FileText size={28} className="text-base-content/70 shrink-0" />
                         <span className="text-sm font-medium underline truncate max-w-[200px]">{msg.fileName || "Download File"}</span>
                       </a>
                     )}
@@ -408,26 +452,24 @@ const Chat = () => {
 
                   {/* Message Footer (Ticks & Delete Button) */}
                   {msg.senderId === userId && (
-                    <div className="chat-footer opacity-50 text-xs mt-1 flex gap-3 items-center">
+                    <div className="chat-footer opacity-70 text-[10px] mt-1 flex gap-2 items-center">
                       
                       {/* The Read Receipt Ticks */}
-                      <span>
+                      <span className="tracking-tighter">
                         {msg.status === "sent" && "✓"}
                         {msg.status === "delivered" && "✓✓"}
                         {msg.status === "seen" && (
-                          <span className="text-primary font-bold">✓✓ Read</span>
+                          <span className="text-info font-bold">✓✓</span>
                         )}
                       </span>
 
                       {/* 👈 NEW: The Delete Button */}
                       <button 
                         onClick={() => handleDeleteMessage(msg._id)}
-                        className="hover:text-error transition-colors duration-200 cursor-pointer flex items-center gap-1"
+                        className="hover:text-error transition-colors duration-200 cursor-pointer"
                         title="Delete for everyone"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                        <Trash2 size={12} />
                       </button>
 
                     </div>
@@ -436,6 +478,16 @@ const Chat = () => {
               </div>
             );
           })}
+          {isTyping && (
+            <div className="chat chat-start animate-pulse mb-4">
+              <div className="chat-header text-xs opacity-60 mb-1">{typingUser}</div>
+              <div className="chat-bubble chat-bubble-sm bg-base-300 text-base-content/70 flex items-center gap-1 h-8">
+                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+              </div>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
@@ -445,11 +497,11 @@ const Chat = () => {
             onClick={() =>
               bottomRef.current?.scrollIntoView({ behavior: "smooth" })
             }
-            className="btn btn-circle btn-primary absolute bottom-20 right-8 shadow-lg z-10"
+            className="btn btn-circle btn-primary btn-sm absolute bottom-24 right-8 shadow-lg z-10"
           >
-            ↓
+            <ChevronDown size={18} />
             {unreadCount > 0 && (
-              <div className="badge badge-error badge-sm absolute -top-2 -right-2">
+              <div className="badge badge-error badge-xs absolute -top-1 -right-1">
                 {unreadCount}
               </div>
             )}
@@ -457,10 +509,10 @@ const Chat = () => {
         )}
 
         {/* Input Area */}
-        <div className="p-3 border-t border-base-300 relative">
+        <div className="p-3 sm:p-4 bg-base-200/90 backdrop-blur-md border-t border-base-300 shrink-0 relative">
           {/* 👈 Emoji Picker Popup */}
           {showEmojiPicker && (
-            <div className="absolute bottom-16 left-4 z-50 shadow-2xl">
+            <div className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-xl overflow-hidden border border-base-300">
               <EmojiPicker
                 onEmojiClick={(emojiData) =>
                   setNewMessage((prev) => prev + emojiData.emoji)
@@ -472,19 +524,13 @@ const Chat = () => {
             </div>
           )}
 
-          {isTyping && (
-            <div className="text-xs italic opacity-70 mb-1.5 ml-2">
-              {typingUser} is typing...
-            </div>
-          )}
-
-          <div className="flex gap-2 items-center">
+          <div className="flex items-end gap-2 bg-base-100 p-1.5 sm:p-2 rounded-3xl shadow-sm border border-base-300 relative focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
             {/* 👈 Emoji Toggle Button */}
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="btn btn-circle btn-ghost btn-sm text-xl"
+              className="btn btn-circle btn-ghost btn-sm text-base-content/70 hover:text-primary shrink-0"
             >
-              😀
+              <Smile size={20} />
             </button>
 
             {/* 👈 Image Upload Button */}
@@ -496,26 +542,11 @@ const Chat = () => {
             />
             <label
               htmlFor="imageUpload"
-              className={`btn btn-circle btn-ghost btn-sm ${
+              className={`btn btn-circle btn-ghost btn-sm text-base-content/70 hover:text-primary shrink-0 ${
                 isUploading ? "loading" : ""
               }`}
             >
-              {!isUploading && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
-                  />
-                </svg>
-              )}
+              {!isUploading && <ImageIcon size={20} />}
             </label>
 
             <input
@@ -523,17 +554,17 @@ const Chat = () => {
               value={newMessage}
               onChange={handleTypingInput}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="input input-bordered input-sm flex-1"
-              placeholder="Type a message..."
+              className="input input-ghost flex-1 h-10 min-h-10 focus:outline-none focus:bg-transparent px-2 w-full"
+              placeholder="Type your message..."
               disabled={!socket || isUploading}
             />
 
             <button
               onClick={sendMessage}
-              className="btn btn-primary btn-sm"
+              className="btn btn-primary btn-circle btn-sm shrink-0"
               disabled={!socket || (!newMessage.trim() && !isUploading)}
             >
-              Send
+              <Send size={16} className="-ml-0.5" />
             </button>
           </div>
         </div>
