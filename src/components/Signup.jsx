@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, Calendar } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -136,43 +136,60 @@ const Signup = () => {
               </div>
             </div>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text font-medium">First Name</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="John"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">First Name</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                    <User size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-10 focus:input-primary transition-colors"
+                    placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+              </div>
 
-            <div className="form-control mb-4">
-              <label className="label">
-                <span className="label-text font-medium">Last Name</span>
-              </label>
-              <input
-                type="text"
-                className="input input-bordered w-full"
-                placeholder="Doe"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-medium">Last Name</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                    <User size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full pl-10 focus:input-primary transition-colors"
+                    placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="form-control mb-4">
               <label className="label">
                 <span className="label-text font-medium">Email</span>
               </label>
-              <input
-                type="email"
-                className="input input-bordered w-full"
-                placeholder="you@example.com"
-                value={emailId}
-                onChange={(e) => setEmailId(e.target.value)}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  className="input input-bordered w-full pl-10 focus:input-primary transition-colors"
+                  placeholder="you@example.com"
+                  value={emailId}
+                  onChange={(e) => setEmailId(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="form-control mb-4">
@@ -180,10 +197,13 @@ const Signup = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full pl-10 pr-10 focus:input-primary transition-colors"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -203,9 +223,12 @@ const Signup = () => {
                 <span className="label-text font-medium">Confirm Password</span>
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full pl-10 pr-10 focus:input-primary transition-colors"
                   placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

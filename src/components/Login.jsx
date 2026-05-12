@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -70,13 +70,18 @@ const Login = () => {
               <label className="label">
                 <span className="label-text font-medium">Email</span>
               </label>
-              <input
-                type="email"
-                className="input input-bordered w-full"
-                placeholder="you@example.com"
-                value={emailId}
-                onChange={(e) => setEmailId(e.target.value)}
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <Mail size={18} />
+                </div>
+                <input
+                  type="email"
+                  className="input input-bordered w-full pl-10 focus:input-primary transition-colors"
+                  placeholder="you@example.com"
+                  value={emailId}
+                  onChange={(e) => setEmailId(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="form-control mb-4">
@@ -84,9 +89,12 @@ const Login = () => {
                 <span className="label-text font-medium">Password</span>
               </label>
               <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/50">
+                  <Lock size={18} />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="input input-bordered w-full"
+                  className="input input-bordered w-full pl-10 pr-10 focus:input-primary transition-colors"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -107,29 +115,31 @@ const Login = () => {
               Login
             </button>
 
-            <button 
-  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`}
-  className="btn btn-outline btn-primary w-full"
->
-  <img src="/google-icon.png" alt="Google" className="w-5 h-5 mr-2" />
-  Continue with Google
-</button>
+            <div className="divider text-sm text-base-content/40 my-6">OR</div>
 
-<button 
-  type="button"
-  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/github`}
-  className="btn btn-outline btn-primary w-full mt-2"
->
-  <img src="/github-icon.png" alt="GitHub" className="w-5 h-5 mr-2" />
-  Continue with GitHub
-</button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button 
+                type="button"
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`}
+                className="btn btn-outline btn-primary flex-1"
+              >
+                <img src="/google-icon.png" alt="Google" className="w-5 h-5 mr-2" />
+                Google
+              </button>
 
-
-
+              <button 
+                type="button"
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/github`}
+                className="btn btn-outline btn-neutral flex-1"
+              >
+                <img src="/github-icon.png" alt="GitHub" className="w-5 h-5 mr-2" />
+                GitHub
+              </button>
+            </div>
 
             <div className="text-center text-sm text-base-content/60">
               Don&apos;t have an account?{" "}
-              <Link to="/signup" className="link link-primary">
+              <Link to="/signup" className="link link-primary hover:font-bold transition-all">
                 Create account
               </Link>
             </div>

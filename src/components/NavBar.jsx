@@ -24,8 +24,8 @@ const NavBar = () => {
   const getNavClass = ({ isActive }) => {
     return `btn btn-ghost btn-sm transition-all duration-200 ${
       isActive
-        ? "text-primary border-b-2 border-primary rounded-b-none font-bold"
-        : "opacity-70 hover:opacity-100"
+        ? "bg-primary/10 text-primary border-b-2 border-primary rounded-b-none font-bold"
+        : "opacity-70 hover:opacity-100 hover:bg-base-300"
     }`;
   };
 
@@ -51,7 +51,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-base-200 border-b border-primary/20 shadow-lg">
+    <nav className="sticky top-0 z-50 bg-base-200/80 backdrop-blur-md border-b border-primary/20 shadow-lg">
       <div className="flex items-center justify-between px-4 py-3">
         {/* ==========================================
             LEFT SIDE: LOGO & TITLE
