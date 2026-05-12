@@ -51,7 +51,14 @@ const Signup = () => {
   const handleSignup = async () => {
     setError("");
 
-    if (!firstName || !lastName || !emailId || !password || !confirmPassword || !age) {
+    if (
+      !firstName ||
+      !lastName ||
+      !emailId ||
+      !password ||
+      !confirmPassword ||
+      !age
+    ) {
       setError("Please fill out all fields.");
       return;
     }
@@ -62,14 +69,18 @@ const Signup = () => {
     }
 
     try {
-      const res = await axios.post(BASE_URL + "/signup", {
-        firstName,
-        lastName,
-        emailId,
-        password,
-        confirmPassword,
-        age,
-      }, { withCredentials: true });
+      const res = await axios.post(
+        BASE_URL + "/signup",
+        {
+          firstName,
+          lastName,
+          emailId,
+          password,
+          confirmPassword,
+          age,
+        },
+        { withCredentials: true },
+      );
 
       dispatch(addUser(res.data.data));
       setToast({ show: true, message: "Signup successful!", type: "success" });
@@ -118,7 +129,9 @@ const Signup = () => {
                     alt="logo"
                   />
                 </div>
-                <h1 className="text-2xl font-bold mt-2 text-base-content">Hii, Developer</h1>
+                <h1 className="text-2xl font-bold mt-2 text-base-content">
+                  Hii, Developer
+                </h1>
                 <p className="text-base-content/60">Create your account</p>
               </div>
             </div>
@@ -232,6 +245,31 @@ const Signup = () => {
                 Login with your account
               </Link>
             </div>
+
+            <button
+              type="button"
+              onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`}
+              className="btn btn-outline btn-primary w-full mt-4"
+            >
+              <img
+                src="/google-icon.png"
+                alt="Google"
+                className="w-5 h-5 mr-2"
+              />
+              Continue with Google
+            </button>
+
+              <button type="button"
+  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/github`}
+  className="btn btn-outline btn-primary w-full mt-2"
+>
+  <img src="/github-icon.png" alt="GitHub" className="w-5 h-5 mr-2" />
+  Continue with GitHub
+</button>
+
+
+
+
           </form>
         </motion.div>
       </div>

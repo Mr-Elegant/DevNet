@@ -1,3 +1,4 @@
+
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -105,6 +106,26 @@ const Login = () => {
             <button type="submit" className="btn btn-primary w-full mb-4">
               Login
             </button>
+
+            <button 
+  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`}
+  className="btn btn-outline btn-primary w-full"
+>
+  <img src="/google-icon.png" alt="Google" className="w-5 h-5 mr-2" />
+  Continue with Google
+</button>
+
+<button 
+  type="button"
+  onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/github`}
+  className="btn btn-outline btn-primary w-full mt-2"
+>
+  <img src="/github-icon.png" alt="GitHub" className="w-5 h-5 mr-2" />
+  Continue with GitHub
+</button>
+
+
+
 
             <div className="text-center text-sm text-base-content/60">
               Don&apos;t have an account?{" "}

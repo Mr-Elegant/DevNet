@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom"; // ✨ Added Navigate
 import { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { SocketProvider } from "./utils/SocketContext";
@@ -16,6 +16,17 @@ import PostDetails from "./components/PostDetails";
 import Search from "./components/Search";
 import SpiderCursor from "./components/SpiderCursor";
 import ViewProfile from "./components/ViewProfile";
+import AdminDashboard from "./components/AdminDashboard"; // ✨ Added AdminDashboard Import
+
+// 🛡️ Admin Route Protection Component
+const AdminRoute = ({ children }) => {
+  const user = useSelector((store) => store.user);
+
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== "admin") return <Navigate to="/" replace />;
+
+  return children;
+};
 
 const App = () => {
   const theme = useSelector((store) => store.theme);
@@ -99,6 +110,15 @@ const App = () => {
             <Route path="/post/:postId" element={<PostDetails />} />
             <Route path="/search" element={<Search />} /> 
             
+            {/* 👑 God Mode Admin Route */}
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
             
           </Route>
         </Routes>
