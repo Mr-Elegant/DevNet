@@ -1,9 +1,40 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tldraw, useEditor } from "tldraw";
 import "tldraw/tldraw.css";
 import { useSocket } from "../utils/SocketContext";
 import { ArrowLeft } from "lucide-react";
+
+// 1. Error Boundary: Prevents the app from turning black and catches the exact error!
+class WhiteboardErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Tldraw crashed:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-base-200 text-error overflow-auto">
+          <h2 className="text-2xl font-bold mb-4">Whiteboard Crash Detected</h2>
+          <p className="mb-4 text-base-content">Please copy this exact error and send it back so we can fix it permanently:</p>
+          <pre className="text-left text-xs bg-base-300 p-4 rounded-xl overflow-auto max-w-[90vw] whitespace-pre-wrap">
+            {this.state.error?.toString() || "Unknown Error"}
+          </pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Hidden child component that securely connects to the editor without causing page re-renders
 const TldrawSync = ({ roomId }) => {
@@ -55,6 +86,19 @@ const TldrawSync = ({ roomId }) => {
   return null; // This component strictly manages logic, no UI
 };
 
+// 2. Memoized Canvas: Prevents Tldraw from re-rendering when the socket connects!
+const IsolatedCanvas = React.memo(({ roomId }) => {
+  return (
+    <WhiteboardErrorBoundary>
+      <Tldraw>
+        <TldrawSync roomId={roomId} />
+      </Tldraw>
+    </WhiteboardErrorBoundary>
+  );
+});
+
+IsolatedCanvas.displayName = "IsolatedCanvas";
+
 const Whiteboard = () => {
   const { roomId } = useParams();
   const socket = useSocket();
@@ -79,9 +123,7 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <Tldraw>
-          <TldrawSync roomId={roomId} />
-        </Tldraw>
+        <IsolatedCanvas roomId={roomId} />
       </div>
     </div>
   );
