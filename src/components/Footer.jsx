@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const Footer = () => {
   return (
-    <footer className="bg-base-200 border-t border-primary/20 py-5 px-6 mt-auto">
+    <footer className="bg-base-200 border-t border-primary/20 pt-5 pb-24 md:pb-5 px-6 mt-auto">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         {/* Logo and Brand Text */}
         <div className="flex items-center gap-3">
