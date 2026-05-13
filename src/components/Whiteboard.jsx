@@ -1,65 +1,71 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tldraw } from "tldraw";
+import { Tldraw, useEditor } from "tldraw";
 import "tldraw/tldraw.css";
 import { useSocket } from "../utils/SocketContext";
 import { ArrowLeft } from "lucide-react";
 
-const Whiteboard = () => {
-  const { roomId } = useParams();
+// Hidden child component that securely connects to the editor without causing page re-renders
+const TldrawSync = ({ roomId }) => {
+  const editor = useEditor();
   const socket = useSocket();
-  const navigate = useNavigate();
-  const [editor, setEditor] = useState(null);
-
 
   useEffect(() => {
     if (!socket || !roomId || !editor) return;
 
-    // 2. Join our custom Socket.io room
+    // 1. Join our custom Socket.io room
     socket.emit("joinWhiteboard", { roomId });
 
-    // 3. Listen for LOCAL drawing changes and send them to our backend
+    // 2. Listen for LOCAL drawing changes and send them to our backend
     const cleanupSync = editor.store.listen(
       (update) => {
-        // Only broadcast changes made by the actual user (not incoming remote changes)
         if (update.source === "user") {
-          socket.emit("whiteboardUpdate", {
-            roomId,
-            update: update.changes,
-          });
+          socket.emit("whiteboardUpdate", { roomId, update: update.changes });
         }
       },
       { source: "user", scope: "document" } 
     );
 
-    // 4. Listen for REMOTE drawing changes from the backend and apply them
+    // 3. Listen for REMOTE drawing changes from the backend and apply them
     const handleRemoteUpdate = (changes) => {
-      // mergeRemoteChanges ensures we don't accidentally re-broadcast incoming updates
-      editor.store.mergeRemoteChanges(() => {
-        const { added, updated, removed } = changes;
-        
-        if (added) {
-          for (const record of Object.values(added)) editor.store.put([record]);
-        }
-        if (updated) {
-          // 'updated' gives us an array of [oldRecord, newRecord]. We only want to save the new one.
-          for (const [oldRecord, newRecord] of Object.values(updated)) editor.store.put([newRecord]);
-        }
-        if (removed) {
-          for (const record of Object.values(removed)) editor.store.remove([record.id]);
-        }
-      });
+      try {
+        editor.store.mergeRemoteChanges(() => {
+          const { added, updated, removed } = changes;
+          
+          if (added) editor.store.put(Object.values(added));
+          
+          if (updated) {
+            const updatedRecords = Object.values(updated).map(([oldRecord, newRecord]) => newRecord);
+            editor.store.put(updatedRecords);
+          }
+          
+          if (removed) {
+            const removedIds = Object.values(removed).map(record => record.id);
+            editor.store.remove(removedIds);
+          }
+        });
+      } catch (err) {
+        console.error("Failed to merge remote drawing:", err);
+      }
     };
 
     socket.on("whiteboardUpdateReceived", handleRemoteUpdate);
 
-    // 5. Cleanup when leaving the page
+    // 4. Cleanup when leaving the page
     return () => {
       cleanupSync();
       socket.off("whiteboardUpdateReceived", handleRemoteUpdate);
       socket.emit("leaveWhiteboard", { roomId });
     };
   }, [socket, roomId, editor]);
+
+  return null; // This component strictly manages logic, no UI
+};
+
+const Whiteboard = () => {
+  const { roomId } = useParams();
+  const socket = useSocket();
+  const navigate = useNavigate();
 
   return (
     <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
@@ -80,7 +86,9 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <Tldraw onMount={setEditor} />
+        <Tldraw>
+           <TldrawSync roomId={roomId} />
+        </Tldraw>
       </div>
     </div>
   );
