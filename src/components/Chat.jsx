@@ -372,8 +372,9 @@ const Chat = () => {
               {roomId && (
                 <button
                   onClick={handleWhiteboardInvite}
+                  disabled={!isOnline}
                   className="btn btn-sm btn-outline btn-primary tooltip tooltip-bottom rounded-full px-3 sm:px-4"
-                  data-tip="Start Collaborative Whiteboard"
+                  data-tip={isOnline ? "Start Collaborative Whiteboard" : "User is offline"}
                 >
                   <PenTool size={16} className="sm:mr-1" />
                   <span className="hidden sm:inline">Whiteboard</span>

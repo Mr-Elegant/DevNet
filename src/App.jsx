@@ -63,7 +63,7 @@ const WhiteboardInviteModal = ({ invite, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
       <div className="card w-96 bg-base-100 shadow-xl animate-jump-in border border-primary/20">
         <div className="card-body items-center text-center">
           <h2 className="card-title text-primary">Whiteboard Invitation</h2>

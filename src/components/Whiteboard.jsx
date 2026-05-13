@@ -1,92 +1,87 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tldraw, useEditor } from "tldraw";
+import { Tldraw, createTLStore, defaultShapeUtils } from "tldraw";
 import "tldraw/tldraw.css";
+import { useSocket } from "../utils/SocketContext";
+import { ArrowLeft } from "lucide-react";
 
-// Assuming your socket instance is available globally or via a custom hook. 
-// If you have a hook like `useSocket()`, import it here. Otherwise, you can
-// import your global socket object directly.
-import { useSocket } from "../utils/SocketContext"; 
+const Whiteboard = () => {
+  const { roomId } = useParams();
+  const socket = useSocket();
+  const navigate = useNavigate();
 
-// Custom component to bridge Tldraw and Socket.IO
-const TldrawSocketSync = ({ roomId }) => {
-  const editor = useEditor();
-  // Get the socket instance from your context
-  const socket = useSocket(); 
+  // 1. Create an empty, local tldraw store (NO demo sync!)
+  const [store] = useState(() => createTLStore({ shapeUtils: defaultShapeUtils }));
 
   useEffect(() => {
-    if (!socket || !editor) return;
+    if (!socket || !roomId) return;
 
-    // 1. Join the Whiteboard Room
+    // 2. Join our custom Socket.io room
     socket.emit("joinWhiteboard", { roomId });
 
-    // 2. Listen to local drawing changes and send to server
-    const cleanupListener = editor.store.listen(
+    // 3. Listen for LOCAL drawing changes and send them to our backend
+    const cleanupSync = store.listen(
       (update) => {
-        // Only broadcast if the change came from the local user
+        // Only broadcast changes made by the actual user (not incoming remote changes)
         if (update.source === "user") {
-          socket.emit("whiteboardUpdate", { roomId, update: update.changes });
+          socket.emit("whiteboardUpdate", {
+            roomId,
+            update: update.changes,
+          });
         }
       },
-      { source: "user", scope: "document" }
+      { source: "user", scope: "document" } 
     );
 
-    // 3. Receive remote drawing changes from the server
+    // 4. Listen for REMOTE drawing changes from the backend and apply them
     const handleRemoteUpdate = (changes) => {
-      // Merge the incoming changes into our local Tldraw store instantly
-      editor.store.mergeRemoteChanges(() => {
+      // mergeRemoteChanges ensures we don't accidentally re-broadcast incoming updates
+      store.mergeRemoteChanges(() => {
         const { added, updated, removed } = changes;
-
-        for (const record of Object.values(added)) {
-          editor.store.put([record]);
+        
+        if (added) {
+          for (const record of Object.values(added)) store.put([record]);
         }
-        for (const [_, record] of Object.values(updated)) {
-          editor.store.put([record]);
+        if (updated) {
+          // 'updated' gives us an array of [oldRecord, newRecord]. We only want to save the new one.
+          for (const [oldRecord, newRecord] of Object.values(updated)) store.put([newRecord]);
         }
-        for (const record of Object.values(removed)) {
-          editor.store.remove([record.id]);
+        if (removed) {
+          for (const record of Object.values(removed)) store.remove([record.id]);
         }
       });
     };
 
     socket.on("whiteboardUpdateReceived", handleRemoteUpdate);
 
-    // Cleanup on unmount
+    // 5. Cleanup when leaving the page
     return () => {
-      cleanupListener();
+      cleanupSync();
       socket.off("whiteboardUpdateReceived", handleRemoteUpdate);
       socket.emit("leaveWhiteboard", { roomId });
     };
-  }, [editor, socket, roomId]);
-
-  return null;
-};
-
-const Whiteboard = () => {
-  const { roomId } = useParams();
-  const navigate = useNavigate();
+  }, [socket, roomId, store]);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-base-100">
-      {/* Minimal Header */}
-      <div className="flex items-center justify-between p-4 bg-base-200 border-b border-base-300 shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="btn btn-sm btn-ghost">
-            ← Back
-          </button>
-          <h1 className="text-xl font-bold text-primary">Collaborative Whiteboard</h1>
-        </div>
-        <div className="badge badge-outline badge-primary font-mono shadow-sm">
-          Room: {roomId}
+    <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
+      {/* Custom Header */}
+      <div className="h-14 bg-base-200 border-b border-base-300 flex items-center px-4 shrink-0 shadow-sm">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="btn btn-ghost btn-sm mr-4"
+        >
+          <ArrowLeft size={18} />
+          Back to Chat
+        </button>
+        <h1 className="text-lg font-bold text-primary">Collaborative Whiteboard</h1>
+        <div className={`ml-auto badge ${socket?.connected ? "badge-success" : "badge-error"} badge-sm`}>
+          {socket?.connected ? "Live Sync Active" : "Disconnected"}
         </div>
       </div>
       
-      {/* The Tldraw canvas MUST be inside a container with a relative position and explicit height */}
-      <div className="flex-1 relative z-0">
-        <Tldraw>
-          {/* Render our sync logic inside the canvas */}
-          <TldrawSocketSync roomId={roomId} />
-        </Tldraw>
+      {/* Tldraw Canvas */}
+      <div className="flex-1 relative w-full h-full">
+        <Tldraw store={store} inferDarkMode />
       </div>
     </div>
   );
