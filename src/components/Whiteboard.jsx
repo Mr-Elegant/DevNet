@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tldraw, createTLStore, defaultShapeUtils } from "tldraw";
+import { Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
 import { useSocket } from "../utils/SocketContext";
 import { ArrowLeft } from "lucide-react";
@@ -9,18 +9,17 @@ const Whiteboard = () => {
   const { roomId } = useParams();
   const socket = useSocket();
   const navigate = useNavigate();
+  const [editor, setEditor] = useState(null);
 
-  // 1. Create an empty, local tldraw store (NO demo sync!)
-  const [store] = useState(() => createTLStore({ shapeUtils: defaultShapeUtils }));
 
   useEffect(() => {
-    if (!socket || !roomId) return;
+    if (!socket || !roomId || !editor) return;
 
     // 2. Join our custom Socket.io room
     socket.emit("joinWhiteboard", { roomId });
 
     // 3. Listen for LOCAL drawing changes and send them to our backend
-    const cleanupSync = store.listen(
+    const cleanupSync = editor.store.listen(
       (update) => {
         // Only broadcast changes made by the actual user (not incoming remote changes)
         if (update.source === "user") {
@@ -36,18 +35,18 @@ const Whiteboard = () => {
     // 4. Listen for REMOTE drawing changes from the backend and apply them
     const handleRemoteUpdate = (changes) => {
       // mergeRemoteChanges ensures we don't accidentally re-broadcast incoming updates
-      store.mergeRemoteChanges(() => {
+      editor.store.mergeRemoteChanges(() => {
         const { added, updated, removed } = changes;
         
         if (added) {
-          for (const record of Object.values(added)) store.put([record]);
+          for (const record of Object.values(added)) editor.store.put([record]);
         }
         if (updated) {
           // 'updated' gives us an array of [oldRecord, newRecord]. We only want to save the new one.
-          for (const [oldRecord, newRecord] of Object.values(updated)) store.put([newRecord]);
+          for (const [oldRecord, newRecord] of Object.values(updated)) editor.store.put([newRecord]);
         }
         if (removed) {
-          for (const record of Object.values(removed)) store.remove([record.id]);
+          for (const record of Object.values(removed)) editor.store.remove([record.id]);
         }
       });
     };
@@ -60,7 +59,7 @@ const Whiteboard = () => {
       socket.off("whiteboardUpdateReceived", handleRemoteUpdate);
       socket.emit("leaveWhiteboard", { roomId });
     };
-  }, [socket, roomId, store]);
+  }, [socket, roomId, editor]);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
@@ -81,7 +80,7 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <Tldraw store={store} inferDarkMode />
+        <Tldraw onMount={setEditor} />
       </div>
     </div>
   );
