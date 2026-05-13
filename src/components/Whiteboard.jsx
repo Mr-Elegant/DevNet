@@ -87,10 +87,10 @@ const TldrawSync = ({ roomId }) => {
 };
 
 // 2. Memoized Canvas: Prevents Tldraw from re-rendering when the socket connects!
-const IsolatedCanvas = React.memo(({ roomId }) => {
+const IsolatedCanvas = React.memo(({ roomId, assetUrls }) => {
   return (
     <WhiteboardErrorBoundary>
-      <Tldraw>
+      <Tldraw assetUrls={assetUrls}>
         <TldrawSync roomId={roomId} />
       </Tldraw>
     </WhiteboardErrorBoundary>
@@ -104,6 +104,15 @@ const Whiteboard = () => {
   const socket = useSocket();
   const navigate = useNavigate();
   
+  // Point Tldraw to your local domain instead of the external CDN
+  // This completely bypasses the Firefox/Safari SVG Security Error!
+  const customAssetUrls = {
+    icons: "/tldraw-assets/icons",
+    translations: "/tldraw-assets/translations",
+    embedIcons: "/tldraw-assets/embed-icons",
+    fonts: "/tldraw-assets/fonts",
+  };
+
   return (
     <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
       {/* Custom Header */}
@@ -123,7 +132,7 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <IsolatedCanvas roomId={roomId} />
+        <IsolatedCanvas roomId={roomId} assetUrls={customAssetUrls} />
       </div>
     </div>
   );
