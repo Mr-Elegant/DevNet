@@ -1,31 +1,34 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
 import { useSocket } from "../utils/SocketContext";
 import { ArrowLeft } from "lucide-react";
 
+// Pure Memoized Component to absolutely guarantee Tldraw NEVER re-renders from parent state changes
+const MemoizedTldraw = React.memo(({ onMount }) => {
+  return <Tldraw onMount={onMount} />;
+});
+MemoizedTldraw.displayName = "MemoizedTldraw";
+
 const Whiteboard = () => {
   const { roomId } = useParams();
   const socket = useSocket();
   const navigate = useNavigate();
 
-  // Pure JS References (NO React state = NO infinite re-renders!)
   const editorRef = useRef(null);
   const cleanupRef = useRef(null);
 
-  const setupSync = () => {
-    // Only run if we have the socket, the room, and the canvas has physically mounted
-    if (!socket || !roomId || !editorRef.current) return;
+  // useCallback ensures this function NEVER changes memory address.
+  // This prevents Tldraw from destroying and recreating the canvas when the socket connects!
+  const handleMount = useCallback((editor) => {
+    editorRef.current = editor;
 
-    // Prevent attaching multiple duplicate listeners
+    if (!socket || !roomId) return;
     if (cleanupRef.current) return;
-
-    const editor = editorRef.current;
 
     socket.emit("joinWhiteboard", { roomId });
 
-    // Listen for LOCAL drawings
     const cleanupEditor = editor.store.listen(
       (update) => {
         if (update.source === "user") {
@@ -35,7 +38,6 @@ const Whiteboard = () => {
       { source: "user", scope: "document" }
     );
 
-    // Listen for REMOTE drawings
     const handleRemoteUpdate = (changes) => {
       try {
         editor.store.mergeRemoteChanges(() => {
@@ -51,28 +53,20 @@ const Whiteboard = () => {
 
     socket.on("whiteboardUpdateReceived", handleRemoteUpdate);
 
-    // Save our destructors safely
     cleanupRef.current = () => {
       cleanupEditor();
       socket.off("whiteboardUpdateReceived", handleRemoteUpdate);
       socket.emit("leaveWhiteboard", { roomId });
       cleanupRef.current = null;
     };
-  };
+  }, [socket, roomId]);
 
-  // If the socket connects/disconnects later, bind/unbind safely
+  // Cleanup on unmount
   useEffect(() => {
-    setupSync();
     return () => {
       if (cleanupRef.current) cleanupRef.current();
     };
-  }, [socket, roomId]);
-
-  // When the canvas finishes loading internally, it calls this function exactly once
-  const handleMount = (editor) => {
-    editorRef.current = editor;
-    setupSync();
-  };
+  }, []);
 
   return (
     <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
@@ -93,7 +87,7 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <Tldraw onMount={handleMount} />
+        <MemoizedTldraw onMount={handleMount} />
       </div>
     </div>
   );
