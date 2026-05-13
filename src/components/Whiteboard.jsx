@@ -1,73 +1,49 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Tldraw, useEditor } from "tldraw";
+import { Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
 import { useSocket } from "../utils/SocketContext";
 import { ArrowLeft } from "lucide-react";
 
-// 1. Error Boundary: Prevents the app from turning black and catches the exact error!
-class WhiteboardErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.error("Tldraw crashed:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-base-200 text-error overflow-auto">
-          <h2 className="text-2xl font-bold mb-4">Whiteboard Crash Detected</h2>
-          <p className="mb-4 text-base-content">Please copy this exact error and send it back so we can fix it permanently:</p>
-          <pre className="text-left text-xs bg-base-300 p-4 rounded-xl overflow-auto max-w-[90vw] whitespace-pre-wrap">
-            {this.state.error?.toString() || "Unknown Error"}
-          </pre>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-// Hidden child component that securely connects to the editor without causing page re-renders
-const TldrawSync = ({ roomId }) => {
-  const editor = useEditor();
+const Whiteboard = () => {
+  const { roomId } = useParams();
   const socket = useSocket();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!socket || !roomId || !editor) return;
+  // Pure JS References (NO React state = NO infinite re-renders!)
+  const editorRef = useRef(null);
+  const cleanupRef = useRef(null);
 
-    // 1. Join our custom Socket.io room
+  const setupSync = () => {
+    // Only run if we have the socket, the room, and the canvas has physically mounted
+    if (!socket || !roomId || !editorRef.current) return;
+
+    // Prevent attaching multiple duplicate listeners
+    if (cleanupRef.current) return;
+
+    const editor = editorRef.current;
+
     socket.emit("joinWhiteboard", { roomId });
 
-    // 2. Listen for LOCAL drawing changes and send them to our backend
-    const cleanupSync = editor.store.listen(
+    // Listen for LOCAL drawings
+    const cleanupEditor = editor.store.listen(
       (update) => {
         if (update.source === "user") {
           socket.emit("whiteboardUpdate", { roomId, update: update.changes });
         }
       },
-      { source: "user", scope: "document" } 
+      { source: "user", scope: "document" }
     );
 
-    // 3. Listen for REMOTE drawing changes from the backend and apply them
+    // Listen for REMOTE drawings
     const handleRemoteUpdate = (changes) => {
       try {
-        // The editor's store is the source of truth.
-        // We use mergeRemoteChanges to apply updates from other users.
         editor.store.mergeRemoteChanges(() => {
           const { added, updated, removed } = changes;
           if (added) editor.store.put(Object.values(added));
           if (updated) editor.store.put(Object.values(updated).map(([_from, to]) => to));
           if (removed) editor.store.remove(Object.values(removed).map((record) => record.id));
-        })
+        });
       } catch (err) {
         console.error("Failed to merge remote drawing:", err);
       }
@@ -75,39 +51,33 @@ const TldrawSync = ({ roomId }) => {
 
     socket.on("whiteboardUpdateReceived", handleRemoteUpdate);
 
-    // 4. Cleanup when leaving the page
-    return () => {
-      cleanupSync();
+    // Save our destructors safely
+    cleanupRef.current = () => {
+      cleanupEditor();
       socket.off("whiteboardUpdateReceived", handleRemoteUpdate);
       socket.emit("leaveWhiteboard", { roomId });
+      cleanupRef.current = null;
     };
-  }, [socket, roomId, editor]);
+  };
 
-  return null; // This component strictly manages logic, no UI
-};
+  // If the socket connects/disconnects later, bind/unbind safely
+  useEffect(() => {
+    setupSync();
+    return () => {
+      if (cleanupRef.current) cleanupRef.current();
+    };
+  }, [socket, roomId]);
 
-// 2. Memoized Canvas: Prevents Tldraw from re-rendering when the socket connects!
-const IsolatedCanvas = React.memo(({ roomId }) => {
-  return (
-    <WhiteboardErrorBoundary>
-      <Tldraw>
-        <TldrawSync roomId={roomId} />
-      </Tldraw>
-    </WhiteboardErrorBoundary>
-  );
-});
-
-IsolatedCanvas.displayName = "IsolatedCanvas";
-
-const Whiteboard = () => {
-  const { roomId } = useParams();
-  const socket = useSocket();
-  const navigate = useNavigate();
+  // When the canvas finishes loading internally, it calls this function exactly once
+  const handleMount = (editor) => {
+    editorRef.current = editor;
+    setupSync();
+  };
 
   return (
     <div className="fixed inset-0 w-full h-full bg-base-100 z-[9999] flex flex-col">
       {/* Custom Header */}
-      <div className="h-14 bg-base-200 border-b border-base-300 flex items-center px-4 shrink-0 shadow-sm">
+      <div className="h-14 bg-base-200 border-b border-base-300 flex items-center px-4 shrink-0 shadow-sm z-10">
         <button 
           onClick={() => navigate(-1)} 
           className="btn btn-ghost btn-sm mr-4"
@@ -123,7 +93,7 @@ const Whiteboard = () => {
       
       {/* Tldraw Canvas */}
       <div className="flex-1 relative w-full h-full">
-        <IsolatedCanvas roomId={roomId} />
+        <Tldraw onMount={handleMount} />
       </div>
     </div>
   );
