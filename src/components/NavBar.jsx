@@ -217,6 +217,9 @@ const NavBar = () => {
                   </Link>
                 </li>
                 <li className="md:hidden">
+                  <Link to="/search" className="py-2.5 px-4 rounded-xl hover:bg-base-200/50">Search</Link>
+                </li>
+                <li className="md:hidden">
                   <Link to="/" className="py-2.5 px-4 rounded-xl hover:bg-base-200/50">Swipe</Link>
                 </li>
                 <li className="md:hidden">
