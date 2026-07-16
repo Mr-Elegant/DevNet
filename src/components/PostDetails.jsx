@@ -159,42 +159,53 @@ const PostDetails = () => {
   const isMyPost = loggedInUser?._id === post.author?._id;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm mb-6 opacity-70 hover:opacity-100">
+    <div className="container mx-auto px-4 py-8 max-w-3xl relative z-10">
+      <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm mb-6 opacity-70 hover:opacity-100 rounded-xl font-bold tracking-wide">
         ← Back to Feed
       </button>
 
-      {/* POST CARD HEADER & BODY (Unchanged) */}
-      <div className="card bg-base-100 shadow-xl border border-base-300 mb-8">
-        <div className="card-body p-6 sm:p-8">
+      {/* POST CARD HEADER & BODY */}
+      <div className="rounded-3xl bg-base-200/40 backdrop-blur-xl border border-base-content/10 shadow-2xl overflow-hidden mb-8 hover:border-primary/20 transition-all duration-300">
+        <div className="p-6 sm:p-8">
           <div className="flex justify-between items-start mb-6">
             <div className="flex gap-4 items-center">
-              <Link to={`/profile/${post.author?._id}`} className="avatar">
-                <div className="w-14 h-14 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                  <img src={post.author?.photoUrl || "https://via.placeholder.com/150"} alt="author" />
+              <Link to={`/profile/${post.author?._id}`} className="avatar hover:opacity-90 transition-opacity">
+                <div className="w-12 h-12 rounded-full ring-2 ring-primary/40 ring-offset-2 ring-offset-base-100">
+                  <img src={post.author?.photoUrl || "https://www.w3schools.com/howto/img_avatar.png"} alt="author" className="object-cover" />
                 </div>
               </Link>
               <div>
-                <Link to={`/profile/${post.author?._id}`} className="font-bold text-xl hover:text-primary transition-colors">
+                <Link to={`/profile/${post.author?._id}`} className="font-extrabold text-lg hover:text-primary transition-colors text-base-content flex items-center gap-1 leading-tight">
                   {post.author?.firstName} {post.author?.lastName}
                 </Link>
-                <div className="text-sm opacity-60">{post.author?.headline} • {formatTimeAgo(post.createdAt)}</div>
+                <div className="text-[10px] font-semibold opacity-50 uppercase tracking-wider mt-1">{post.author?.headline || "Developer"} • {formatTimeAgo(post.createdAt)}</div>
               </div>
             </div>
-            <div className={`badge badge-lg font-bold uppercase tracking-wider ${post.type === "launch" ? "badge-success" : post.type === "question" ? "badge-error" : "badge-primary"}`}>
+            <span className={`badge badge-sm font-extrabold uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
+              post.type === "launch" 
+                ? "bg-success/10 border-success/20 text-success" 
+                : post.type === "question" 
+                  ? "bg-error/10 border-error/20 text-error" 
+                  : "bg-primary/10 border-primary/20 text-primary"
+            }`}>
               {post.type}
-            </div>
+            </span>
           </div>
-          {post.title && <h1 className="text-3xl font-bold mb-4">{post.title}</h1>}
-          <p className="whitespace-pre-wrap text-lg mb-6 leading-relaxed">{post.content}</p>
+
+          {post.title && <h1 className="text-2xl font-black tracking-tight mb-3 text-base-content leading-tight">{post.title}</h1>}
+          <p className="whitespace-pre-wrap text-sm text-base-content/95 mb-6 leading-relaxed font-medium">{post.content}</p>
+          
           {post.codeSnippet && (
-            <div className="mockup-code bg-neutral text-neutral-content mb-6">
-              <pre data-prefix=">" className="text-warning"><code>{post.codeLanguage}</code></pre> 
-              <pre><code>{post.codeSnippet}</code></pre>
+            <div className="rounded-2xl overflow-hidden border border-base-content/10 mb-6 bg-neutral shadow-inner">
+              <div className="bg-neutral-focus/60 px-4 py-2 border-b border-neutral-focus flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-neutral-content/65">{post.codeLanguage}</span>
+              </div>
+              <pre className="p-4 font-mono text-xs text-warning overflow-x-auto leading-relaxed"><code>{post.codeSnippet}</code></pre>
             </div>
           )}
+          
           {post.images?.length > 0 && (
-            <figure className="mb-6 rounded-xl overflow-hidden border border-base-300">
+            <figure className="mb-6 rounded-2xl overflow-hidden border border-base-content/10 max-h-[400px]">
               <img src={post.images[0]} alt="Post attachment" className="object-cover w-full" />
             </figure>
           )}
@@ -202,16 +213,19 @@ const PostDetails = () => {
       </div>
 
       {/* COMMENTS SECTION */}
-      <div className="bg-base-200 rounded-2xl p-4 sm:p-8 border border-base-300 shadow-inner">
-        <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-          Discussions <span className="badge badge-primary">{post.comments?.length || 0}</span>
+      <div className="rounded-3xl bg-base-200/50 backdrop-blur-xl border border-base-content/10 shadow-2xl p-6 sm:p-8">
+        <h3 className="text-lg font-black text-base-content mb-6 flex items-center gap-2">
+          Discussions 
+          <span className="bg-primary/15 border border-primary/20 text-primary font-bold px-2 py-0.5 rounded-lg text-xs">
+            {post.comments?.length || 0}
+          </span>
         </h3>
 
         {/* MAIN COMMENT INPUT */}
         <div className="flex gap-4 mb-8">
-          <div className="avatar hidden sm:block">
-            <div className="w-10 h-10 rounded-full">
-              <img src={loggedInUser?.photoUrl} alt="You" />
+          <div className="avatar hidden sm:block shrink-0">
+            <div className="w-10 h-10 rounded-full ring-2 ring-primary/20">
+              <img src={loggedInUser?.photoUrl} alt="You" className="object-cover rounded-full" />
             </div>
           </div>
           <div className="flex-1 flex gap-2">
@@ -221,97 +235,121 @@ const PostDetails = () => {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()} 
-              className="input input-bordered w-full" 
+              className="input input-bordered w-full text-sm bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl h-11" 
             />
-            <button onClick={handleCommentSubmit} disabled={isSubmitting || !newComment.trim()} className="btn btn-primary">
+            <button 
+              onClick={handleCommentSubmit} 
+              disabled={isSubmitting || !newComment.trim()} 
+              className="btn btn-primary rounded-xl font-bold px-5 text-sm h-11 min-h-[44px] shadow-md shadow-primary/10"
+            >
               Post
             </button>
           </div>
         </div>
 
         {/* COMMENT LIST */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {post.comments?.length === 0 ? (
-            <p className="text-center opacity-50 italic py-4">No comments yet. Be the first to share your thoughts!</p>
+            <p className="text-center opacity-40 font-semibold text-xs uppercase tracking-wider py-8">Be the first to share your thoughts! ✍️</p>
           ) : (
             post.comments?.slice().reverse().map((comment) => (
               
-              <div key={comment._id} className={`flex gap-4 p-4 rounded-xl transition-colors ${comment.isAcceptedAnswer ? 'bg-success/10 border border-success/30' : 'bg-base-100 border border-base-300'}`}>
-                
-                <Link to={`/profile/${comment.user?._id}`} className="avatar flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full"><img src={comment.user?.photoUrl || "https://via.placeholder.com/150"} alt="commenter" /></div>
-                </Link>
-
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <Link to={`/profile/${comment.user?._id}`} className="font-bold hover:text-primary">
-                        {comment.user?.firstName} {comment.user?.lastName}
-                      </Link>
-                      <span className="text-xs opacity-50">{formatTimeAgo(comment.createdAt)}</span>
+              <div 
+                key={comment._id} 
+                className={`p-4 rounded-2xl border transition-all duration-300 ${
+                  comment.isAcceptedAnswer 
+                    ? 'bg-success/5 border-success/30 shadow-md' 
+                    : 'bg-base-100/40 border-base-content/10 shadow-sm'
+                }`}
+              >
+                <div className="flex gap-4">
+                  <Link to={`/profile/${comment.user?._id}`} className="avatar shrink-0">
+                    <div className="w-9 h-9 rounded-full ring-1 ring-base-content/10">
+                      <img src={comment.user?.photoUrl || "https://www.w3schools.com/howto/img_avatar.png"} alt="commenter" className="object-cover rounded-full" />
                     </div>
-                    {comment.isAcceptedAnswer && <span className="badge badge-success badge-sm gap-1 font-bold">✓ Answer</span>}
-                  </div>
-                  
-                  <p className="text-base-content/90 text-sm leading-relaxed">{comment.text}</p>
+                  </Link>
 
-                  {/* ACTION BUTTONS (Accept Answer & Reply) */}
-                  <div className="flex items-center gap-4 mt-2">
-                    <button 
-                      onClick={() => setActiveReplyId(activeReplyId === comment._id ? null : comment._id)}
-                      className="text-xs font-semibold opacity-60 hover:opacity-100 hover:text-primary transition-colors"
-                    >
-                      ↩ Reply
-                    </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Link to={`/profile/${comment.user?._id}`} className="font-extrabold text-xs hover:text-primary transition-colors text-base-content leading-tight">
+                          {comment.user?.firstName} {comment.user?.lastName}
+                        </Link>
+                        <span className="text-[9px] font-semibold opacity-40 uppercase tracking-wider">{formatTimeAgo(comment.createdAt)}</span>
+                      </div>
+                      {comment.isAcceptedAnswer && (
+                        <span className="badge badge-success bg-success/15 border-success/30 text-success text-[9px] font-bold py-1 px-2 rounded-lg uppercase tracking-wide">
+                          ✓ Answer
+                        </span>
+                      )}
+                    </div>
+                    
+                    <p className="text-base-content/85 text-xs leading-relaxed font-semibold mt-1">{comment.text}</p>
 
-                    {post.type === "question" && isMyPost && comment.user?._id !== loggedInUser?._id && (
+                    {/* ACTION BUTTONS */}
+                    <div className="flex items-center gap-4 mt-3">
                       <button 
-                        onClick={() => handleAcceptAnswer(comment._id)}
-                        className={`text-xs font-semibold transition-colors ${comment.isAcceptedAnswer ? 'text-success hover:text-error' : 'opacity-50 hover:text-success'}`}
+                        onClick={() => setActiveReplyId(activeReplyId === comment._id ? null : comment._id)}
+                        className="text-[10px] font-bold uppercase tracking-wider opacity-50 hover:opacity-100 hover:text-primary transition-all flex items-center gap-1"
                       >
-                        {comment.isAcceptedAnswer ? "Remove Answer Status" : "✓ Mark as Accepted"}
+                        ↩ Reply
                       </button>
+
+                      {post.type === "question" && isMyPost && comment.user?._id !== loggedInUser?._id && (
+                        <button 
+                          onClick={() => handleAcceptAnswer(comment._id)}
+                          className={`text-[10px] font-bold uppercase tracking-wider transition-all ${
+                            comment.isAcceptedAnswer 
+                              ? 'text-error hover:text-error/80' 
+                              : 'opacity-50 hover:text-success'
+                          }`}
+                        >
+                          {comment.isAcceptedAnswer ? "Remove Answer Status" : "✓ Mark as Accepted"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* REPLY INPUT BOX */}
+                    {activeReplyId === comment._id && (
+                      <div className="flex gap-2 mt-4 ml-2">
+                        <input 
+                          type="text" 
+                          autoFocus
+                          placeholder={`Replying to ${comment.user?.firstName}...`} 
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(comment._id)} 
+                          className="input input-bordered input-sm w-full bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl text-xs h-9" 
+                        />
+                        <button onClick={() => handleReplySubmit(comment._id)} className="btn btn-primary btn-sm rounded-xl font-bold h-9 min-h-[36px] text-xs px-4">Reply</button>
+                      </div>
                     )}
-                  </div>
 
-                  {/* ✨ NEW: REPLY INPUT BOX (Only shows if this comment's Reply button was clicked) */}
-                  {activeReplyId === comment._id && (
-                    <div className="flex gap-2 mt-4 ml-4">
-                      <input 
-                        type="text" 
-                        autoFocus
-                        placeholder={`Replying to ${comment.user?.firstName}...`} 
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(comment._id)} 
-                        className="input input-bordered input-sm w-full" 
-                      />
-                      <button onClick={() => handleReplySubmit(comment._id)} className="btn btn-primary btn-sm">Reply</button>
-                    </div>
-                  )}
-
-                  {/* ✨ NEW: NESTED REPLIES LIST */}
-                  {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-4 space-y-3 pl-4 border-l-2 border-base-300">
-                      {comment.replies.map((reply) => (
-                        <div key={reply._id} className="flex gap-3">
-                          <Link to={`/profile/${reply.user?._id}`} className="avatar flex-shrink-0">
-                            <div className="w-6 h-6 rounded-full"><img src={reply.user?.photoUrl || "https://via.placeholder.com/150"} alt="replier" /></div>
-                          </Link>
-                          <div className="bg-base-200 p-2 px-3 rounded-lg w-full">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Link to={`/profile/${reply.user?._id}`} className="text-xs font-bold hover:text-primary">
-                                {reply.user?.firstName} {reply.user?.lastName}
-                              </Link>
-                              <span className="text-[10px] opacity-50">{formatTimeAgo(reply.createdAt)}</span>
+                    {/* NESTED REPLIES LIST */}
+                    {comment.replies && comment.replies.length > 0 && (
+                      <div className="mt-4 space-y-3 pl-4 border-l-2 border-base-content/10">
+                        {comment.replies.map((reply) => (
+                          <div key={reply._id} className="flex gap-3">
+                            <Link to={`/profile/${reply.user?._id}`} className="avatar shrink-0">
+                              <div className="w-6 h-6 rounded-full">
+                                <img src={reply.user?.photoUrl || "https://www.w3schools.com/howto/img_avatar.png"} alt="replier" className="object-cover rounded-full" />
+                              </div>
+                            </Link>
+                            <div className="bg-base-200/50 border border-base-content/5 p-2.5 px-3.5 rounded-2xl w-full">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Link to={`/profile/${reply.user?._id}`} className="text-xs font-bold hover:text-primary transition-colors text-base-content">
+                                  {reply.user?.firstName} {reply.user?.lastName}
+                                </Link>
+                                <span className="text-[8px] font-semibold opacity-40 uppercase tracking-wider">{formatTimeAgo(reply.createdAt)}</span>
+                              </div>
+                              <p className="text-xs text-base-content/80 font-medium leading-relaxed">{reply.text}</p>
                             </div>
-                            <p className="text-sm opacity-90">{reply.text}</p>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
 
+                  </div>
                 </div>
               </div>
             ))

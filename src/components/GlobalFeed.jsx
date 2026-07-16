@@ -5,6 +5,7 @@ import CreatePost from "./CreatePost";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import VerifiedBadge from "./VerifiedBadge";
+import { motion } from "framer-motion";
 
 const GlobalFeed = () => {
   const loggedInUser = useSelector((store) => store.user);
@@ -168,32 +169,39 @@ const GlobalFeed = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
       
       {/* TOP ACTION BAR */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-base-300 gap-4">
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <button 
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-8 pb-5 border-b border-base-content/10 gap-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto shrink-0">
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setShowEditor(!showEditor)} 
-            className={`btn shadow-md transition-all duration-300 w-full sm:w-auto ${showEditor ? 'btn-ghost text-error' : 'btn-primary hover:scale-105'}`}
+            className={`btn rounded-xl shadow-md transition-all duration-300 w-full sm:w-auto h-11 min-h-[44px] font-bold tracking-wide ${
+              showEditor 
+                ? 'btn-outline border-error/20 hover:border-error hover:bg-error/5 text-error' 
+                : 'btn-primary shadow-lg shadow-primary/10 text-primary-content'
+            }`}
           >
-            {showEditor ? "✕ Cancel Post" : "✍️ Create Post"}
-          </button>
+            {showEditor ? "✕ Close Post Editor" : "✍️ Write a Post"}
+          </motion.button>
         </div>
-        <div className="join w-full sm:max-w-xs shadow-sm">
+
+        <div className="join w-full sm:max-w-xs shadow-md rounded-xl border border-base-content/10 overflow-hidden bg-base-100/50 backdrop-blur-md">
           <input 
             type="text" 
-            placeholder="Search posts, tags, or bugs..." 
+            placeholder="Search posts, tags, bugs..." 
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="input input-bordered input-sm sm:input-md join-item w-full focus:outline-primary" 
+            className="input input-ghost join-item w-full focus:outline-none focus:bg-base-100 text-sm h-11" 
           />
-          <button className="btn btn-sm sm:btn-md btn-ghost join-item bg-base-200 border border-base-300 pointer-events-none">🔍</button>
+          <button type="button" className="btn btn-ghost join-item border-l border-base-content/10 bg-base-200/50 pointer-events-none text-base-content/50 w-12 h-11 min-h-[44px]">🔍</button>
         </div>
       </div>
 
       {showEditor && (
-        <div className="mb-10 transition-all duration-500 ease-in-out transform origin-top">
+        <div className="mb-8">
           <CreatePost onPostCreated={handlePostCreated} />
         </div>
       )}
@@ -204,25 +212,25 @@ const GlobalFeed = () => {
           const isLikedByMe = post.likes?.includes(loggedInUser?._id);
 
           return (
-            <div key={post._id} className="card bg-base-100 shadow-xl border border-base-300 hover:border-primary/30 transition-colors">
-              <div className="card-body p-5 sm:p-7">
+            <div 
+              key={post._id} 
+              className="rounded-3xl bg-base-200/40 backdrop-blur-xl border border-base-content/10 shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-primary/20"
+            >
+              <div className="p-6 sm:p-7">
                 
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex gap-3 items-center">
-                    <Link to={`/profile/${post.author?._id}`} className="avatar hover:opacity-80 transition-opacity">
-                      <div className="w-12 h-12 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                        <img src={post.author?.photoUrl || "https://via.placeholder.com/150"} alt="author" />
+                <div className="flex justify-between items-start mb-5">
+                  <div className="flex gap-3.5 items-center">
+                    <Link to={`/profile/${post.author?._id}`} className="avatar hover:opacity-90 transition-opacity">
+                      <div className="w-11 h-11 rounded-full ring-2 ring-primary/30 ring-offset-2 ring-offset-base-100">
+                        <img src={post.author?.photoUrl || "https://www.w3schools.com/howto/img_avatar.png"} alt="author" className="object-cover" />
                       </div>
                     </Link>
                     <div>
-                      <Link to={`/profile/${post.author?._id}`} className="font-bold text-lg hover:text-primary transition-colors">
+                      <Link to={`/profile/${post.author?._id}`} className="font-extrabold text-base hover:text-primary transition-colors flex items-center gap-1 leading-tight text-base-content">
                         {post.author?.firstName} {post.author?.lastName}
-                        <VerifiedBadge 
-    isPremium={post.author?.isPremium} 
-    membershipType={post.author?.membershipType} // 👈 Add this line!
-  />
+                        <VerifiedBadge isPremium={post.author?.isPremium} membershipType={post.author?.membershipType} />
                       </Link>
-                      <div className="text-xs opacity-60 flex gap-2 items-center">
+                      <div className="text-[10px] font-semibold opacity-50 flex gap-2 items-center mt-1 uppercase tracking-wider">
                         <span>{post.author?.headline || "Developer"}</span>
                         <span>•</span>
                         <span>{formatTimeAgo(post.createdAt)}</span>
@@ -231,27 +239,32 @@ const GlobalFeed = () => {
                   </div>
 
                   {/* BADGE & DROPDOWN MENU */}
-                  <div className="flex flex-col items-end gap-2">
-                    <div className={`badge badge-sm sm:badge-md font-bold uppercase tracking-wider ${
-                      post.type === "launch" ? "badge-success" : post.type === "question" ? "badge-error" : post.type === "article" ? "badge-info" : "badge-primary"
+                  <div className="flex flex-col items-end gap-2.5">
+                    <span className={`badge badge-sm font-extrabold uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
+                      post.type === "launch" 
+                        ? "bg-success/10 border-success/20 text-success" 
+                        : post.type === "question" 
+                          ? "bg-error/10 border-error/20 text-error" 
+                          : post.type === "article" 
+                            ? "bg-info/10 border-info/20 text-info" 
+                            : "bg-primary/10 border-primary/20 text-primary"
                     }`}>
                       {post.type}
-                    </div>
+                    </span>
 
-                    {/* ✨ UPDATED: 3-Dot Menu hooked up to the Edit function */}
                     {loggedInUser?._id === post.author?._id && (
                       <div className="dropdown dropdown-end">
                         <div tabIndex={0} role="button" className="btn btn-ghost btn-xs btn-circle opacity-50 hover:opacity-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-5 h-5 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="w-5 h-5 stroke-current"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                         </div>
-                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-xl bg-base-200 rounded-box w-32 border border-base-300">
+                        <ul tabIndex={0} className="dropdown-content z-[1] menu p-1.5 shadow-2xl bg-base-100/90 backdrop-blur-xl rounded-xl w-32 border border-base-content/10 animate-fade-in space-y-0.5">
                           <li>
-                            <a onClick={() => openEditModal(post)} className="hover:text-primary font-semibold">
-                              ✏️ Edit
+                            <a onClick={() => openEditModal(post)} className="hover:bg-primary/10 hover:text-primary rounded-lg py-2 font-semibold text-xs text-base-content/85">
+                              ✏️ Edit Post
                             </a>
                           </li>
                           <li>
-                            <a onClick={() => handleDeletePost(post._id)} className="text-error hover:bg-error hover:text-white font-semibold mt-1">
+                            <a onClick={() => handleDeletePost(post._id)} className="text-error hover:bg-error/10 rounded-lg py-2 font-semibold text-xs mt-0.5">
                               🗑️ Delete
                             </a>
                           </li>
@@ -261,51 +274,53 @@ const GlobalFeed = () => {
                   </div>
                 </div>
 
-                {post.title && <h2 className="text-2xl font-bold mb-2">{post.title}</h2>}
-                <p className="whitespace-pre-wrap text-base-content/90 mb-4">{post.content}</p>
+                {post.title && <h2 className="text-lg font-black tracking-tight mb-2 text-base-content leading-snug">{post.title}</h2>}
+                <p className="whitespace-pre-wrap text-sm text-base-content/85 mb-4 leading-relaxed font-medium">{post.content}</p>
 
                 {post.codeSnippet && (
-                  <div className="mockup-code bg-neutral text-neutral-content mb-4 before:hidden">
-                    <pre data-prefix=">" className="text-warning"><code>{post.codeLanguage}</code></pre> 
-                    <pre><code>{post.codeSnippet}</code></pre>
+                  <div className="rounded-2xl overflow-hidden border border-base-content/10 mb-4 bg-neutral shadow-inner">
+                    <div className="bg-neutral-focus/60 px-4 py-2 border-b border-neutral-focus flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-neutral-content/65">{post.codeLanguage}</span>
+                    </div>
+                    <pre className="p-4 font-mono text-xs text-warning overflow-x-auto leading-relaxed"><code>{post.codeSnippet}</code></pre>
                   </div>
                 )}
 
                 {post.images && post.images.length > 0 && (
-                  <figure className="mb-4 rounded-xl overflow-hidden border border-base-300 max-h-[400px]">
+                  <figure className="mb-4 rounded-2xl overflow-hidden border border-base-content/10 max-h-[400px] shadow-sm">
                     <img src={post.images[0]} alt="Post attachment" className="object-cover w-full" />
                   </figure>
                 )}
 
                 {post.type === "launch" && post.projectUrl && (
-                  <a href={post.projectUrl} target="_blank" rel="noreferrer" className="btn btn-success btn-outline btn-sm w-fit mb-4">
-                    🚀 View Live Project
+                  <a href={post.projectUrl} target="_blank" rel="noreferrer" className="btn btn-success btn-outline btn-sm rounded-xl font-bold tracking-wide w-fit mb-4">
+                    🚀 View Live App
                   </a>
                 )}
 
                 {post.tags && post.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {post.tags.map((tag, idx) => (
-                      <span key={idx} className="text-xs font-semibold text-primary opacity-80 hover:opacity-100 cursor-pointer">
+                      <span key={idx} className="text-xs font-bold text-primary opacity-80 hover:opacity-100 cursor-pointer">
                         #{tag}
                       </span>
                     ))}
                   </div>
                 )}
 
-                <div className="flex items-center gap-6 mt-4 pt-4 border-t border-base-200">
-                  <button onClick={() => handleLike(post._id)} className={`flex items-center gap-2 transition-transform active:scale-90 ${isLikedByMe ? "text-error" : "hover:text-error opacity-70"}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={isLikedByMe ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isLikedByMe ? 0 : 2}>
+                <div className="flex items-center gap-6 mt-5 pt-4 border-t border-base-content/5">
+                  <button onClick={() => handleLike(post._id)} className={`flex items-center gap-2 transition-transform active:scale-95 text-xs font-semibold ${isLikedByMe ? "text-error" : "hover:text-error opacity-60 hover:opacity-100"}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill={isLikedByMe ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={isLikedByMe ? 0 : 2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
-                    <span className="font-semibold">{post.likes?.length || 0}</span>
+                    <span>{post.likes?.length || 0} Likes</span>
                   </button>
 
-                  <Link to={`/post/${post._id}`} className="flex items-center gap-2 hover:text-primary opacity-70 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <Link to={`/post/${post._id}`} className="flex items-center gap-2 hover:text-primary opacity-60 hover:opacity-100 transition-all text-xs font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03-8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                     </svg>
-                    <span className="font-semibold">{post.comments?.length || 0}</span>
+                    <span>{post.comments?.length || 0} Comments</span>
                   </Link>
                 </div>
               </div>
@@ -316,20 +331,20 @@ const GlobalFeed = () => {
         {isLoading && <div className="flex justify-center py-8"><span className="loading loading-spinner loading-lg text-primary"></span></div>}
         {!isLoading && hasMore && posts.length > 0 && (
           <div className="flex justify-center pt-4">
-            <button onClick={loadMorePosts} className="btn btn-outline btn-primary rounded-full px-8">Load More Posts ↓</button>
+            <button onClick={loadMorePosts} className="btn btn-outline btn-primary rounded-xl px-8 font-bold tracking-wide h-11 min-h-[44px]">Load More Posts ↓</button>
           </div>
         )}
-        {!hasMore && posts.length > 0 && !searchText && <p className="text-center opacity-50 font-medium py-8">You've reached the end of the dev-verse! 🌌</p>}
-        {!isLoading && posts.length === 0 && searchText && <p className="text-center opacity-50 font-medium py-8">No results found for "{searchText}". Try searching something else!</p>}
-        {!isLoading && posts.length === 0 && !searchText && <p className="text-center opacity-50 font-medium py-8">No posts yet. Be the first to launch something! 🚀</p>}
+        {!hasMore && posts.length > 0 && !searchText && <p className="text-center opacity-40 font-bold text-xs tracking-wider uppercase py-8">End of the dev-verse! 🌌</p>}
+        {!isLoading && posts.length === 0 && searchText && <p className="text-center opacity-45 font-semibold text-sm py-8">No results found for "{searchText}". Try a different keyword!</p>}
+        {!isLoading && posts.length === 0 && !searchText && <p className="text-center opacity-45 font-semibold text-sm py-8">No posts yet. Be the first to share something! 🚀</p>}
       </div>
 
       {/* ==========================================
-          ✨ NEW: THE EDIT MODAL
+          ✨ EDIT MODAL
           ========================================== */}
       <dialog id="edit_post_modal" className="modal modal-bottom sm:modal-middle">
-        <div className="modal-box bg-base-100 border border-primary/20">
-          <h3 className="font-bold text-xl mb-4 text-primary">Edit Post</h3>
+        <div className="modal-box bg-base-100/90 backdrop-blur-xl border border-base-content/10 shadow-2xl rounded-3xl p-6 sm:p-8 max-w-lg">
+          <h3 className="font-black text-xl mb-4 text-primary bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Edit Post</h3>
           
           <form onSubmit={handleEditSubmit} className="flex flex-col gap-4">
             <input 
@@ -337,25 +352,25 @@ const GlobalFeed = () => {
               placeholder="Post Title (Optional)" 
               value={editForm.title} 
               onChange={(e) => setEditForm({...editForm, title: e.target.value})} 
-              className="input input-bordered w-full font-bold" 
+              className="input input-bordered w-full font-bold text-sm bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl" 
             />
             
             <textarea 
               placeholder="What do you want to share with the dev community?" 
               value={editForm.content} 
               onChange={(e) => setEditForm({...editForm, content: e.target.value})} 
-              className="textarea textarea-bordered h-32 w-full text-base leading-relaxed" 
+              className="textarea textarea-bordered h-36 w-full text-sm bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl leading-relaxed" 
               required
             ></textarea>
             
             {editForm.codeSnippet !== "" && (
-              <div className="p-4 bg-base-200 rounded-xl border border-base-300">
-                <p className="text-xs font-bold mb-2 opacity-50 uppercase tracking-wider">Code Snippet</p>
-                <div className="flex gap-2 mb-2">
+              <div className="p-4 bg-neutral text-neutral-content rounded-2xl border border-neutral-focus space-y-3">
+                <p className="text-[10px] font-black uppercase tracking-wider opacity-60">Code Snippet</p>
+                <div className="flex gap-2">
                   <select 
                     value={editForm.codeLanguage} 
                     onChange={(e) => setEditForm({...editForm, codeLanguage: e.target.value})} 
-                    className="select select-sm select-bordered max-w-xs"
+                    className="select select-bordered select-xs bg-neutral-focus text-neutral-content border-neutral-content/10 rounded-lg text-[10px]"
                   >
                     <option value="javascript">JavaScript / JSX</option>
                     <option value="python">Python</option>
@@ -369,23 +384,23 @@ const GlobalFeed = () => {
                 <textarea 
                   value={editForm.codeSnippet} 
                   onChange={(e) => setEditForm({...editForm, codeSnippet: e.target.value})} 
-                  className="textarea textarea-bordered w-full font-mono text-sm h-32 bg-neutral text-neutral-content" 
+                  className="textarea textarea-bordered w-full font-mono text-xs h-32 bg-neutral-focus text-neutral-content focus:outline-none focus:bg-neutral-focus/80" 
                 ></textarea>
               </div>
             )}
 
             <input 
               type="text" 
-              placeholder="Tags (comma separated, e.g. React, Node.js)" 
+              placeholder="Tags (comma-separated, e.g. react, api)" 
               value={editForm.tags} 
               onChange={(e) => setEditForm({...editForm, tags: e.target.value})} 
-              className="input input-bordered input-sm w-full" 
+              className="input input-bordered input-sm w-full bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl text-xs h-9" 
             />
 
             <div className="modal-action mt-2">
               <button 
                 type="button" 
-                className="btn" 
+                className="btn btn-outline border-base-content/10 rounded-xl font-bold text-xs h-9 min-h-[36px]" 
                 onClick={() => {
                   document.getElementById("edit_post_modal").close();
                   setEditingPost(null);
@@ -393,8 +408,8 @@ const GlobalFeed = () => {
               >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary" disabled={isUpdating}>
-                {isUpdating ? <span className="loading loading-spinner loading-sm"></span> : "Save Changes"}
+              <button type="submit" className="btn btn-primary rounded-xl font-bold text-xs h-9 min-h-[36px] text-primary-content shadow-lg shadow-primary/10" disabled={isUpdating}>
+                {isUpdating ? <span className="loading loading-spinner loading-xs"></span> : "Save Changes"}
               </button>
             </div>
           </form>

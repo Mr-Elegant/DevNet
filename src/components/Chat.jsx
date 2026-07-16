@@ -336,65 +336,64 @@ const Chat = () => {
 
 
   return (
-    <div className="container mx-auto p-2 sm:p-4 h-[calc(100vh-4.5rem)] max-w-5xl">
-      <div className="bg-base-200/50 backdrop-blur-md shadow-2xl rounded-3xl border border-primary/10 h-full flex flex-col overflow-hidden">
+    <div className="container mx-auto px-4 py-6 h-[calc(100vh-6rem)] sm:h-[calc(100vh-7.5rem)] max-w-5xl relative z-10 flex flex-col">
+      <div className="bg-base-200/40 backdrop-blur-xl shadow-2xl rounded-3xl border border-base-content/10 flex-1 flex flex-col overflow-hidden">
+        
         {/* Chat Header */}
-        <div className="p-3 sm:p-4 bg-base-200/90 backdrop-blur-md border-b border-base-300 flex items-center justify-between z-10 shrink-0 shadow-sm">
+        <div className="p-4 bg-base-100/60 backdrop-blur-lg border-b border-base-content/5 flex items-center justify-between z-10 shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(-1)} className="btn btn-ghost btn-circle btn-sm md:hidden">
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
             {targetUser?.photoUrl && (
               <div className={`avatar ${isOnline ? "online" : ""}`}>
-                <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-1">
+                <div className="w-10 rounded-full ring-2 ring-primary/40 ring-offset-2 ring-offset-base-100">
                   <img src={targetUser.photoUrl} alt={targetUser.firstName} />
                 </div>
               </div>
             )}
             <div>
-              <h2 className="text-base font-semibold leading-tight">
+              <h2 className="text-sm font-bold text-base-content leading-tight">
                 {targetUser
                   ? `${targetUser.firstName} ${targetUser.lastName || ""}`
                   : "Chat"}
               </h2>
-              <div className="text-xs mt-0.5">
+              <div className="text-[10px] font-semibold mt-0.5 uppercase tracking-wider">
                 {isOnline ? (
-                  <span className="text-success font-medium">Online</span>
+                  <span className="text-success">Online</span>
                 ) : (
-                  <span className="opacity-60">Offline</span>
+                  <span className="opacity-40">Offline</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-              {/* ✨ NEW: Collaborative Whiteboard Button */}
-              {roomId && (
-                <button
-                  onClick={handleWhiteboardInvite}
-                  disabled={!isOnline}
-                  className="btn btn-sm btn-outline btn-primary tooltip tooltip-bottom rounded-full px-3 sm:px-4"
-                  data-tip={isOnline ? "Start Collaborative Whiteboard" : "User is offline"}
-                >
-                  <PenTool size={16} className="sm:mr-1" />
-                  <span className="hidden sm:inline">Whiteboard</span>
-                </button>
-              )}
-
-              <div
-                className={`badge badge-xs ${
-                  socket?.connected ? "badge-success" : "badge-error"
-                }`}
+          <div className="flex items-center gap-3">
+            {/* Collaborative Whiteboard Button */}
+            {roomId && (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleWhiteboardInvite}
+                disabled={!isOnline}
+                className="btn btn-xs sm:btn-sm btn-outline btn-primary rounded-xl px-3 sm:px-4"
+                title={isOnline ? "Start Collaborative Whiteboard" : "User is offline"}
               >
-                {socket?.connected ? "●" : "○"}
-              </div>
-        </div>
+                <PenTool size={14} className="sm:mr-1.5" />
+                <span className="hidden sm:inline">Collaborate</span>
+              </motion.button>
+            )}
+
+            <div className={`badge ${socket?.connected ? "badge-success" : "badge-error"} badge-xs`}>
+              {socket?.connected ? "connected" : "reconnecting"}
+            </div>
+          </div>
         </div>
 
         {/* Messages Container */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 scroll-smooth bg-base-100/30"
+          className="flex-1 overflow-y-auto p-4 space-y-3.5 scroll-smooth bg-base-100/20"
         >
           {messages.map((msg, index) => {
             const showDate =
@@ -402,24 +401,22 @@ const Chat = () => {
               formatDateLabel(msg.createdAt) !==
                 formatDateLabel(messages[index - 1].createdAt);
 
+            const isMe = msg.senderId === userId;
+
             return (
-              <div key={`${msg._id}-${msg.status}`}>
+              <div key={`${msg._id}-${msg.status}`} className="space-y-1.5">
                 {showDate && (
-                  <div className="flex justify-center my-3">
-                    <span className="text-xs bg-base-300/80 text-base-content/70 px-4 py-1 rounded-full font-medium shadow-sm backdrop-blur-sm">
+                  <div className="flex justify-center my-4">
+                    <span className="text-[9px] uppercase tracking-widest bg-base-200/80 text-base-content/50 border border-base-content/5 px-3.5 py-1 rounded-full font-bold shadow-sm backdrop-blur-sm">
                       {formatDateLabel(msg.createdAt)}
                     </span>
                   </div>
                 )}
 
-                <div
-                  className={`chat ${
-                    msg.senderId === userId ? "chat-end" : "chat-start"
-                  }`}
-                >
-                  <div className="chat-header text-xs opacity-60 mb-1">
+                <div className={`chat ${isMe ? "chat-end" : "chat-start"}`}>
+                  <div className="chat-header text-[10px] font-semibold opacity-50 mb-1">
                     {msg.firstName}
-                    <time className="ml-2">
+                    <time className="ml-1.5">
                       {new Date(msg.createdAt).toLocaleTimeString([], {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -428,64 +425,73 @@ const Chat = () => {
                   </div>
 
                   <div
-                    className={`chat-bubble shadow-sm ${
-                      msg.senderId === userId
-                        ? "chat-bubble-primary"
-                        : "bg-base-100 text-base-content border border-base-300"
+                    className={`chat-bubble shadow-sm text-sm leading-relaxed px-4 py-2.5 rounded-2xl ${
+                      isMe
+                        ? "bg-gradient-to-br from-primary to-secondary text-primary-content rounded-tr-none"
+                        : "bg-base-100 border border-base-content/5 text-base-content rounded-tl-none"
                     }`}
                   >
                     {/* Render Image */}
                     {msg.image && (
-                      <img src={msg.image} alt="attachment" className="max-w-xs rounded-lg mb-2 cursor-pointer hover:opacity-90" onClick={() => window.open(msg.image, "_blank")} />
+                      <img 
+                        src={msg.image} 
+                        alt="attachment" 
+                        className="max-w-xs rounded-xl mb-1.5 cursor-pointer hover:opacity-95 transition-opacity" 
+                        onClick={() => window.open(msg.image, "_blank")} 
+                      />
                     )}
 
-                    {/* 👈 NEW: Render Generic File (PDF, ZIP, etc) */}
+                    {/* Render Generic File */}
                     {msg.fileUrl && (
-                      <a href={msg.fileUrl} target="_blank" rel="noreferrer" className="flex items-center gap-3 bg-base-100/20 p-3 rounded-lg hover:bg-base-100/40 transition mb-2">
-                        <FileText size={28} className="text-base-content/70 shrink-0" />
-                        <span className="text-sm font-medium underline truncate max-w-[200px]">{msg.fileName || "Download File"}</span>
+                      <a 
+                        href={msg.fileUrl} 
+                        target="_blank" 
+                        rel="noreferrer" 
+                        className="flex items-center gap-3 bg-base-content/10 hover:bg-base-content/20 p-2.5 rounded-xl transition mb-1"
+                      >
+                        <FileText size={22} className="opacity-75 shrink-0" />
+                        <span className="text-xs font-semibold underline truncate max-w-[180px]">
+                          {msg.fileName || "View Attachment"}
+                        </span>
                       </a>
                     )}
 
                     {/* Render Text */}
-                    {msg.text && <p>{msg.text}</p>}
+                    {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
                   </div>
 
                   {/* Message Footer (Ticks & Delete Button) */}
-                  {msg.senderId === userId && (
-                    <div className="chat-footer opacity-70 text-[10px] mt-1 flex gap-2 items-center">
-                      
-                      {/* The Read Receipt Ticks */}
-                      <span className="tracking-tighter">
+                  {isMe && (
+                    <div className="chat-footer opacity-50 text-[9px] mt-1 flex gap-2 items-center">
+                      <span className="font-bold tracking-tighter">
                         {msg.status === "sent" && "✓"}
                         {msg.status === "delivered" && "✓✓"}
                         {msg.status === "seen" && (
-                          <span className="text-info font-bold">✓✓</span>
+                          <span className="text-primary font-black">✓✓</span>
                         )}
                       </span>
 
-                      {/* 👈 NEW: The Delete Button */}
                       <button 
                         onClick={() => handleDeleteMessage(msg._id)}
-                        className="hover:text-error transition-colors duration-200 cursor-pointer"
+                        className="hover:text-error transition-colors duration-150 cursor-pointer"
                         title="Delete for everyone"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={11} />
                       </button>
-
                     </div>
                   )}
                 </div>
               </div>
             );
           })}
+          
           {isTyping && (
-            <div className="chat chat-start animate-pulse mb-4">
-              <div className="chat-header text-xs opacity-60 mb-1">{typingUser}</div>
-              <div className="chat-bubble chat-bubble-sm bg-base-300 text-base-content/70 flex items-center gap-1 h-8">
-                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce"></span>
-                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-1.5 h-1.5 bg-base-content/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+            <div className="chat chat-start animate-pulse mb-2">
+              <div className="chat-header text-[10px] font-semibold opacity-50 mb-1">{typingUser}</div>
+              <div className="chat-bubble chat-bubble-sm bg-base-300 text-base-content/60 flex items-center gap-1 h-8 rounded-2xl rounded-tl-none">
+                <span className="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                <span className="w-1.5 h-1.5 bg-base-content/40 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
               </div>
             </div>
           )}
@@ -498,11 +504,11 @@ const Chat = () => {
             onClick={() =>
               bottomRef.current?.scrollIntoView({ behavior: "smooth" })
             }
-            className="btn btn-circle btn-primary btn-sm absolute bottom-24 right-8 shadow-lg z-10"
+            className="btn btn-circle btn-primary btn-sm absolute bottom-24 right-8 shadow-2xl z-10 hover:scale-105 transition-transform"
           >
-            <ChevronDown size={18} />
+            <ChevronDown size={16} />
             {unreadCount > 0 && (
-              <div className="badge badge-error badge-xs absolute -top-1 -right-1">
+              <div className="badge badge-error badge-xs absolute -top-1 -right-1 font-bold">
                 {unreadCount}
               </div>
             )}
@@ -510,10 +516,10 @@ const Chat = () => {
         )}
 
         {/* Input Area */}
-        <div className="p-3 sm:p-4 bg-base-200/90 backdrop-blur-md border-t border-base-300 shrink-0 relative">
-          {/* 👈 Emoji Picker Popup */}
+        <div className="p-4 bg-base-100/60 backdrop-blur-lg border-t border-base-content/5 shrink-0 relative">
+          {/* Emoji Picker Popup */}
           {showEmojiPicker && (
-            <div className="absolute bottom-20 left-4 z-50 shadow-2xl rounded-xl overflow-hidden border border-base-300">
+            <div className="absolute bottom-24 left-4 z-50 shadow-2xl rounded-2xl overflow-hidden border border-base-content/10">
               <EmojiPicker
                 onEmojiClick={(emojiData) =>
                   setNewMessage((prev) => prev + emojiData.emoji)
@@ -525,16 +531,14 @@ const Chat = () => {
             </div>
           )}
 
-          <div className="flex items-end gap-2 bg-base-100 p-1.5 sm:p-2 rounded-3xl shadow-sm border border-base-300 relative focus-within:ring-2 focus-within:ring-primary/50 transition-shadow">
-            {/* 👈 Emoji Toggle Button */}
+          <div className="flex items-end gap-2 bg-base-200/50 p-2 rounded-2xl border border-base-content/5 relative focus-within:ring-2 focus-within:ring-primary/40 transition-all">
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="btn btn-circle btn-ghost btn-sm text-base-content/70 hover:text-primary shrink-0"
+              className="btn btn-circle btn-ghost btn-sm text-base-content/55 hover:text-primary shrink-0"
             >
-              <Smile size={20} />
+              <Smile size={18} />
             </button>
 
-            {/* 👈 Image Upload Button */}
             <input
               type="file"
               id="imageUpload"
@@ -543,30 +547,37 @@ const Chat = () => {
             />
             <label
               htmlFor="imageUpload"
-              className={`btn btn-circle btn-ghost btn-sm text-base-content/70 hover:text-primary shrink-0 ${
+              className={`btn btn-circle btn-ghost btn-sm text-base-content/55 hover:text-primary shrink-0 ${
                 isUploading ? "loading" : ""
               }`}
             >
-              {!isUploading && <ImageIcon size={20} />}
+              {!isUploading && <ImageIcon size={18} />}
             </label>
 
-            <input
-              type="text"
+            <textarea
+              rows={1}
               value={newMessage}
               onChange={handleTypingInput}
-              onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              className="input input-ghost flex-1 h-10 min-h-10 focus:outline-none focus:bg-transparent px-2 w-full"
-              placeholder="Type your message..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              className="textarea textarea-ghost flex-1 focus:outline-none focus:bg-transparent px-2 w-full resize-none min-h-[38px] max-h-[120px] text-sm leading-relaxed"
+              placeholder="Type a message..."
               disabled={!socket || isUploading}
             />
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={sendMessage}
               className="btn btn-primary btn-circle btn-sm shrink-0"
               disabled={!socket || (!newMessage.trim() && !isUploading)}
             >
-              <Send size={16} className="-ml-0.5" />
-            </button>
+              <Send size={14} className="-ml-0.5" />
+            </motion.button>
           </div>
         </div>
       </div>

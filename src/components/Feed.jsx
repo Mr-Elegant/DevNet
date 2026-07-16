@@ -5,12 +5,15 @@ import axios from "axios"; // HTTP client to talk to your backend
 import { BASE_URL } from "../utils/constants"; // Your backend server URL
 import { useDispatch, useSelector } from "react-redux"; // Redux hooks for global state management
 import { useEffect, useState } from "react"; // React hooks for component lifecycle and local memory
+import { useNavigate } from "react-router-dom"; // Navigation hook
 import { addFeed, removeUserFromFeed } from "../utils/feedSlice"; // Redux actions to update the feed list
 import UserCard from "./UserCard"; // Your custom UI component to display user info
-import TinderCard from "react-tinder-card"; // The swipe physics library
+import SwipeableCard from "./SwipeableCard"; // Custom Framer Motion swiper
 import { useSocket } from "../utils/SocketContext"; // Your global socket connection for real-time notifications
+import { motion } from "framer-motion"; // Animation library
 
 const Feed = () => {
+  const navigate = useNavigate();
   // ==========================================
   // 2. GLOBAL STATE & HOOKS
   // ==========================================
@@ -30,6 +33,8 @@ const Feed = () => {
   const [dragDirection, setDragDirection] = useState(null);
   // Tracks WHICH specific card is being dragged so stamps don't show on all cards
   const [activeCardId, setActiveCardId] = useState(null);
+  // Tracks button-triggered swipe targets for smooth programmatic animation
+  const [swipeTarget, setSwipeTarget] = useState({ userId: null, dir: null });
   // NEW: Prevents spam-clicking the action buttons
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -93,73 +98,75 @@ const Feed = () => {
   // ==========================================
   // 6. SWIPE EVENT HANDLERS
   // ==========================================
-  // Triggers when a physical swipe finishes
+  // Triggers when a physical or programmatic swipe finishes
   const onSwipe = async (direction, targetUserId) => {
+    setIsProcessing(true);
     await processAction(direction, targetUserId);
   };
 
   // Triggers after the card flies completely off the screen
   const onCardLeftScreen = (targetUserId) => {
-    // Reset the stamps
     setDragDirection(null);
     setActiveCardId(null);
-    // Finally, remove the user from Redux to reveal the next card
+    setSwipeTarget({ userId: null, dir: null });
     dispatch(removeUserFromFeed(targetUserId));
-  };
-
-  // ==========================================
-  // 7. NEW: BUTTON EVENT HANDLER
-  // ==========================================
-  // Triggers when a user clicks the Ignore or Interested buttons
-  const handleButtonClick = async (direction) => {
-    // Prevent double-clicking
-    if (isProcessing || !feed || feed.length === 0) return;
-    
-    setIsProcessing(true);
-    
-    // Grab the user who is currently on the TOP of the deck
-    const topCardUser = feed[0];
-
-    // 1. Process the API request and Socket event
-    await processAction(direction, topCardUser._id);
-    
-    // 2. Instantly remove them from Redux (skips the fly-away animation for speed)
-    onCardLeftScreen(topCardUser._id);
-    
     setIsProcessing(false);
   };
 
   // ==========================================
-  // 8. STAMP OVERLAY HANDLERS
+  // 7. BUTTON EVENT HANDLER
   // ==========================================
-  // Triggers when the card is dragged past the 100px threshold
-  const handleRequirementFulfilled = (direction, userId) => {
-    if (direction === "left" || direction === "right") {
-      setDragDirection(direction); // Tells UI to show stamp
-      setActiveCardId(userId); // Tells UI WHICH card gets the stamp
-    }
+  // Triggers when a user clicks the Ignore or Connect buttons
+  const handleButtonClick = (direction) => {
+    if (isProcessing || !feed || feed.length === 0) return;
+    setIsProcessing(true);
+    const topCardUser = feed[0];
+    setSwipeTarget({ userId: topCardUser._id, dir: direction });
   };
 
-  // Triggers if they drag it out, but pull it back to the middle
-  const handleRequirementUnfulfilled = () => {
-    setDragDirection(null); // Hides the stamp
-    setActiveCardId(null);
+  // ==========================================
+  // 8. DRAG STATE OVERLAY HANDLER
+  // ==========================================
+  const handleDragStateChange = (direction, userId) => {
+    setDragDirection(direction);
+    setActiveCardId(direction ? userId : null);
   };
 
+  // ==========================================
   // ==========================================
   // 9. RENDER: LOADING & EMPTY STATES
   // ==========================================
-  // Show nothing while fetching data
   if (!feed) return null;
 
-  // Show message if out of developers
+  // Show message if out of developers with a gorgeous empty card state
   if (feed.length <= 0) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-base-content/70">No new users found!</h1>
-          <p className="text-base-content/50 mt-2">Check back later for new connections</p>
-        </div>
+      <div className="flex justify-center items-center min-h-[70vh] px-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-base-200/50 backdrop-blur-xl border border-base-content/10 shadow-2xl text-center space-y-6"
+        >
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary border border-primary/20">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-base-content tracking-tight">You're All Caught Up!</h1>
+            <p className="text-sm text-base-content/60 mt-2 font-medium leading-relaxed">
+              No new developers found matching your criteria. Check back later or update your profile to find more peers!
+            </p>
+          </div>
+          <div className="pt-2">
+            <button 
+              onClick={() => navigate("/profile")}
+              className="btn btn-primary w-full rounded-xl font-bold tracking-wide shadow-lg shadow-primary/20 h-11"
+            >
+              Update My Tech Stack
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -168,87 +175,86 @@ const Feed = () => {
   // 10. RENDER: THE DECK & BUTTONS
   // ==========================================
   return (
-    // Main wrapper ensuring everything is centered
-    <div className="flex flex-col items-center justify-center my-10 min-h-[70vh] overflow-hidden">
+    <div className="flex flex-col items-center justify-center my-8 min-h-[72vh] overflow-hidden">
       
       {/* Container for the cards */}
-      <div className="relative w-96 h-[500px]">
-        
-        {/* We map in reverse (.slice().reverse()) so feed[0] renders LAST and sits on TOP of the visual stack */}
-        {feed.slice().reverse().map((user) => (
-          <TinderCard
-            key={user._id}
-            className="absolute shadow-xl w-full"
-            onSwipe={(dir) => onSwipe(dir, user._id)}
-            onCardLeftScreen={() => onCardLeftScreen(user._id)}
-            onSwipeRequirementFulfilled={(dir) => handleRequirementFulfilled(dir, user._id)}
-            onSwipeRequirementUnfulfilled={handleRequirementUnfulfilled}
-            preventSwipe={["up", "down"]} // Disables vertical swiping
-            swipeRequirementType="position"
-            swipeThreshold={100} // Requires a 100px drag to lock in the swipe
-          >
-            {/* Inner wrapper for stamps and the UserCard */}
-            <div className="relative w-full h-full">
-              
-              {/* 🟢 LIKE STAMP */}
-              {dragDirection === "right" && activeCardId === user._id && (
-                <div className="absolute top-10 left-6 z-50 pointer-events-none opacity-90 transition-opacity duration-200">
-                  <div className="border-[6px] border-success text-success font-black text-5xl px-4 py-1 rounded-lg uppercase tracking-widest transform -rotate-12 bg-base-100/40 backdrop-blur-sm shadow-xl">
-                    LIKE
-                  </div>
-                </div>
-              )}
+      <div className="relative w-96 h-[520px]">
+        {feed.slice().reverse().map((user) => {
+          const isActive = feed[0]?._id === user._id;
+          const forceSwipe = swipeTarget.userId === user._id ? swipeTarget.dir : null;
 
-              {/* 🔴 NOPE STAMP */}
-              {dragDirection === "left" && activeCardId === user._id && (
-                <div className="absolute top-10 right-6 z-50 pointer-events-none opacity-90 transition-opacity duration-200">
-                  <div className="border-[6px] border-error text-error font-black text-5xl px-4 py-1 rounded-lg uppercase tracking-widest transform rotate-12 bg-base-100/40 backdrop-blur-sm shadow-xl">
-                    NOPE
+          return (
+            <SwipeableCard
+              key={user._id}
+              active={isActive}
+              forceSwipe={forceSwipe}
+              onSwipe={(dir) => onSwipe(dir, user._id)}
+              onCardLeftScreen={() => onCardLeftScreen(user._id)}
+              onDragStateChange={(dir) => handleDragStateChange(dir, user._id)}
+            >
+              <div className="relative w-full h-full">
+                {/* 🟢 LIKE STAMP */}
+                {dragDirection === "right" && activeCardId === user._id && (
+                  <div className="absolute top-10 left-8 z-50 pointer-events-none opacity-90 transition-opacity duration-200">
+                    <div className="border-[5px] border-success text-success font-black text-4xl px-4 py-1.5 rounded-xl uppercase tracking-widest transform -rotate-12 bg-base-100/80 backdrop-blur-md shadow-2xl">
+                      LIKE
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* The User Info Card (isPreview hides its original internal buttons) */}
-              <UserCard user={user} isPreview={true} />
-            </div>
-          </TinderCard>
-        ))}
+                {/* 🔴 NOPE STAMP */}
+                {dragDirection === "left" && activeCardId === user._id && (
+                  <div className="absolute top-10 right-8 z-50 pointer-events-none opacity-90 transition-opacity duration-200">
+                    <div className="border-[5px] border-error text-error font-black text-4xl px-4 py-1.5 rounded-xl uppercase tracking-widest transform rotate-12 bg-base-100/80 backdrop-blur-md shadow-2xl">
+                      NOPE
+                    </div>
+                  </div>
+                )}
+
+                {/* The User Info Card */}
+                <UserCard user={user} isPreview={true} />
+              </div>
+            </SwipeableCard>
+          );
+        })}
       </div>
 
       {/* ==========================================
-          11. NEW: ACTION BUTTONS (Tinder Style)
+          11. ACTION BUTTONS (Tinder Style)
           ========================================== */}
       <div className="mt-8 flex items-center justify-center gap-6">
         
-        {/* IGNORE BUTTON (Left) */}
-        <button 
+        {/* IGNORE BUTTON */}
+        <motion.button 
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => handleButtonClick("left")}
           disabled={isProcessing}
-          className="btn btn-circle btn-lg bg-base-100 border-error/20 hover:bg-error hover:text-white hover:border-error text-error shadow-xl hover:scale-110 transition-all duration-300 disabled:opacity-50"
+          className="btn btn-circle btn-lg bg-base-100 border border-base-content/10 hover:bg-error hover:text-error-content hover:border-error text-error shadow-xl disabled:opacity-50 h-16 w-16"
         >
-          {/* 'X' Icon */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
-        </button>
+        </motion.button>
 
-        {/* INTERESTED BUTTON (Right) */}
-        <button 
+        {/* INTERESTED BUTTON */}
+        <motion.button 
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => handleButtonClick("right")}
           disabled={isProcessing}
-          className="btn btn-circle btn-lg bg-base-100 border-success/20 hover:bg-success hover:text-white hover:border-success text-success shadow-xl hover:scale-110 transition-all duration-300 disabled:opacity-50"
+          className="btn btn-circle btn-lg bg-base-100 border border-base-content/10 hover:bg-success hover:text-success-content hover:border-success text-success shadow-xl disabled:opacity-50 h-16 w-16"
         >
-          {/* 'Heart' Icon */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
-        </button>
+        </motion.button>
       </div>
 
-      {/* Swipe instructions (Optional, can be removed now that buttons exist) */}
-      <div className="mt-6 flex items-center justify-center gap-8 text-sm opacity-50 font-medium">
-        <span>Swipe or Click to decide</span>
-      </div>
+      {/* Instructions */}
+      <p className="mt-5 text-xs font-semibold tracking-wider uppercase opacity-40">
+        Swipe cards or click buttons
+      </p>
       
     </div>
   );

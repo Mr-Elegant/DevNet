@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BASE_URL } from "../utils/constants";
 import { addUser } from "../utils/userSlice";
+import { motion } from "framer-motion";
 
 const Premium = () => {
   const user = useSelector((store) => store.user);
@@ -87,98 +88,129 @@ const Premium = () => {
   };
 
   return isUserPremium ? (
-    <div className="flex justify-center items-center min-h-[60vh]">
-      <div className="card bg-base-200 shadow-xl max-w-md">
-        <div className="card-body text-center">
-          <h2 className="card-title text-2xl justify-center">
-            🎉 Premium Member
+    <div className="flex justify-center items-center min-h-[70vh] px-4 relative z-10">
+      <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-base-200/50 backdrop-blur-xl border border-primary/30 shadow-2xl text-center space-y-6">
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto text-primary border border-primary/20 text-3xl animate-pulse">
+          👑
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-base-content tracking-tight">
+            Premium Member Active
           </h2>
-          <p className="text-base-content/70">
-            You already have premium access to all features!
+          <p className="text-sm text-base-content/60 mt-2 font-medium leading-relaxed">
+            Congratulations! You have active premium privileges. A verified badge has been applied to your profile card.
           </p>
-          <div className="badge badge-primary badge-lg mt-4">Active</div>
+        </div>
+        <div className="pt-2">
+          <span className="badge badge-primary bg-primary/15 border border-primary/30 text-primary font-bold px-4 py-2 text-xs rounded-xl uppercase tracking-wider">
+            Active Member
+          </span>
         </div>
       </div>
     </div>
   ) : (
-    <div className="container mx-auto px-4 py-10">
-      <div className="text-center mb-10">
-        <h1 className="text-4xl font-bold text-base-content mb-2">
+    <div className="container mx-auto px-4 py-12 max-w-6xl relative z-10">
+      <div className="text-center mb-12">
+        <h1 className="text-4xl font-black tracking-tight text-base-content bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Choose Your Plan
         </h1>
-        <p className="text-base-content/60">
-          Unlock premium features and connect with developers worldwide
+        <p className="text-sm font-semibold text-base-content/50 uppercase tracking-widest mt-1">
+          Unlock the dev-verse with DevNet Premium
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 justify-center items-center">
+      <div className="flex flex-col lg:flex-row gap-8 justify-center items-stretch">
         {/* Free Plan */}
-        <div className="card w-96 bg-base-200 shadow-xl border border-base-300 hover:scale-[1.02] transition-all duration-300">
-          <div className="card-body">
-            <h2 className="card-title text-2xl">Free</h2>
-            <div className="text-4xl font-bold my-4">₹0</div>
-
-            <ul className="space-y-2 text-sm text-base-content/70">
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Basic Access</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Limited Features</li>
-              <li className="flex items-center gap-2"><span className="text-error">✗</span> No Analytics</li>
-            </ul>
-
-            <div className="card-actions mt-6">
-              <button className="btn btn-outline w-full" disabled>Current Plan</button>
+        <div className="w-full max-w-xs rounded-3xl bg-base-200/40 backdrop-blur-xl border border-base-content/10 shadow-xl p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-base-content uppercase tracking-wider">Free</h2>
+              <div className="text-3xl font-black text-base-content mt-2">₹0</div>
             </div>
+
+            <ul className="space-y-3.5 text-xs font-semibold text-base-content/75">
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Basic Profile Access</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Read Community Posts</li>
+              <li className="flex items-center gap-2"><span className="text-error text-sm">✗</span> No Chat Messages</li>
+              <li className="flex items-center gap-2"><span className="text-error text-sm">✗</span> Limited Swipe Cards</li>
+            </ul>
+          </div>
+
+          <div className="mt-8">
+            <button className="btn btn-outline border-base-content/10 text-base-content/50 w-full rounded-xl font-bold tracking-wide h-11 min-h-[44px]" disabled>
+              Current Plan
+            </button>
           </div>
         </div>
 
         {/* Silver Plan */}
-        <div className="card w-96 bg-base-200 shadow-2xl border-2 border-primary hover:scale-[1.05] transition-all duration-300 relative">
-          <div className="badge badge-primary absolute right-4 top-4">POPULAR</div>
-          <div className="card-body">
-            <h2 className="card-title text-2xl">Silver</h2>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold">₹199</span>
-              <span className="text-base-content/60">/year</span>
+        <div className="w-full max-w-xs rounded-3xl bg-base-200/50 backdrop-blur-xl border-2 border-primary shadow-2xl p-6 flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300 relative overflow-hidden">
+          <div className="absolute right-3 top-3">
+            <span className="badge badge-primary bg-primary/15 border border-primary/20 text-primary text-[8px] font-black tracking-widest uppercase px-2 py-1.5 rounded-lg shadow-sm">
+              Popular
+            </span>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-base-content uppercase tracking-wider">Silver</h2>
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-3xl font-black text-base-content">₹199</span>
+                <span className="text-xs font-semibold text-base-content/55">/year</span>
+              </div>
             </div>
 
-            <ul className="space-y-2 text-sm text-base-content/70 my-4">
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> All Free Features</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Chat with other people</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> 100 requests/day</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Blue Tick</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> 1 year access</li>
+            <ul className="space-y-3.5 text-xs font-semibold text-base-content/75">
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> All Free Plan Features</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Chat with Developers</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> 100 swipes per day</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Verified Silver Badge</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Collaborative Whiteboard</li>
             </ul>
+          </div>
 
-            <div className="card-actions mt-6">
-              <button onClick={() => handleBuyClick("silver")} disabled={isProcessing} className="btn btn-primary w-full">
-                {isProcessing ? "Processing..." : "Get Silver"}
-              </button>
-            </div>
+          <div className="mt-8">
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleBuyClick("silver")} 
+              disabled={isProcessing} 
+              className="btn btn-primary w-full rounded-xl font-bold tracking-wide text-primary-content h-11 min-h-[44px] shadow-lg shadow-primary/20"
+            >
+              {isProcessing ? "Processing..." : "Get Silver"}
+            </motion.button>
           </div>
         </div>
 
         {/* Gold Plan */}
-        <div className="card w-96 bg-base-200 shadow-xl border-2 border-warning hover:scale-[1.02] transition-all duration-300">
-          <div className="card-body">
-            <h2 className="card-title text-2xl">Gold</h2>
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-bold">₹399</span>
-              <span className="text-base-content/60">/year</span>
+        <div className="w-full max-w-xs rounded-3xl bg-base-200/40 backdrop-blur-xl border-2 border-warning shadow-xl p-6 flex flex-col justify-between hover:scale-[1.01] transition-transform duration-300">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-base-content uppercase tracking-wider">Gold</h2>
+              <div className="flex items-baseline gap-1 mt-2">
+                <span className="text-3xl font-black text-base-content">₹399</span>
+                <span className="text-xs font-semibold text-base-content/55">/year</span>
+              </div>
             </div>
 
-            <ul className="space-y-2 text-sm text-base-content/70 my-4">
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> All Silver Features</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Priority Support</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Unlimited requests</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Unlimited Posting</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> Lifetime access</li>
-              <li className="flex items-center gap-2"><span className="text-success">✓</span> AI Support</li>
+            <ul className="space-y-3.5 text-xs font-semibold text-base-content/75">
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> All Silver Plan Features</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Unlimited swipes per day</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Unlimited Forum Postings</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Gold Verification Badge</li>
+              <li className="flex items-center gap-2"><span className="text-success text-sm">✓</span> Lifetime Support & AI</li>
             </ul>
+          </div>
 
-            <div className="card-actions mt-6">
-              <button onClick={() => handleBuyClick("gold")} disabled={isProcessing} className="btn btn-warning w-full">
-                {isProcessing ? "Processing..." : "Get Gold"}
-              </button>
-            </div>
+          <div className="mt-8">
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleBuyClick("gold")} 
+              disabled={isProcessing} 
+              className="btn btn-warning w-full rounded-xl font-bold tracking-wide text-warning-content h-11 min-h-[44px] shadow-lg shadow-warning/20"
+            >
+              {isProcessing ? "Processing..." : "Get Gold"}
+            </motion.button>
           </div>
         </div>
       </div>

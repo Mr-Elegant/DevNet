@@ -1,93 +1,115 @@
-import {useState} from "react";
+import { useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch, useSelector } from "react-redux";
 import { removeUserFromFeed } from "../utils/feedSlice";
-import { useSocket } from "../utils/SocketContext"; // Import Socket
+import { useSocket } from "../utils/SocketContext";
+import VerifiedBadge from "./VerifiedBadge";
 
-// UserCard component to display user information and handle interactions.
 const UserCard = ({ user, isPreview = false }) => {
-  const { _id, firstName, lastName, photoUrl, age, gender, about } = user;
+  const { _id, firstName, lastName, photoUrl, age, gender, about, skills, isPremium, membershipType } = user;
 
   const [isRequesting, setIsRequesting] = useState(false);
 
   const dispatch = useDispatch();
-  const socket = useSocket(); // Get the global socket
-  const loggedInUser = useSelector((store) => store.user); // Get the senders info
+  const socket = useSocket();
+  const loggedInUser = useSelector((store) => store.user);
 
   const handleSendRequest = async (status, targetUserId) => {
-
-    if(isRequesting) return;   // Prevent double-clicks
-
-    setIsRequesting(true);    // Disable buttons
+    if (isRequesting) return;
+    setIsRequesting(true);
 
     try {
-      // 1. Send the actual request to your backend database
       await axios.post(
         `${BASE_URL}/request/send/${status}/${targetUserId}`,
         {},
         { withCredentials: true },
       );
 
-      // 2. Remove the user from the current feed
       dispatch(removeUserFromFeed(targetUserId));
 
-      // 3. 👈 NEW: If they clicked "interested", trigger the real-time notification!
       if (status === "interested" && socket && loggedInUser) {
         socket.emit("sendConnectionRequest", {
           senderId: loggedInUser._id,
           receiverId: targetUserId,
           firstName: loggedInUser.firstName,
           lastName: loggedInUser.lastName,
-          text: "Sent you a connection request!" // Ensure text is sent!
+          text: "Sent you a connection request!"
         });
       }
     } catch (err) {
       console.error(err);
-      setIsRequesting(false); // Only re-enable if it failed
+      setIsRequesting(false);
     }
   };
 
   return (
-
-    <div className="card w-96 bg-base-200 shadow-xl border border-primary/20 hover:shadow-2xl transition-all duration-300 hover:scale-105">
-      <figure className="relative">
+    <div className="w-96 rounded-3xl overflow-hidden bg-base-200/50 backdrop-blur-xl border border-base-content/10 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/20 flex flex-col h-[520px]">
+      {/* Photo with Overlay */}
+      <div className="relative h-[340px] w-full overflow-hidden">
         <img
           src={photoUrl}
           alt={`${firstName} ${lastName}`}
-          className="w-full h-96 object-cover"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-base-300 to-transparent p-4">
-          <h2 className="card-title text-primary">
-            {firstName} {lastName}
-          </h2>
+        <div className="absolute inset-0 bg-gradient-to-t from-base-200 via-base-200/30 to-transparent flex flex-col justify-end p-6">
+          <div className="flex items-center gap-1.5 mb-1">
+            <h2 className="text-2xl font-black tracking-tight text-base-content flex items-center gap-1">
+              {firstName} {lastName}
+            </h2>
+            <VerifiedBadge isPremium={isPremium} membershipType={membershipType} />
+          </div>
           {age && gender && (
-            <p className="text-sm text-base-content/70">
-              {age}, {gender}
+            <p className="text-xs font-semibold uppercase tracking-wider text-base-content/60">
+              {age} yrs • {gender}
             </p>
           )}
         </div>
-      </figure>
+      </div>
 
-      <div className="card-body">
-        <p className="text-sm text-base-content/80 line-clamp-3">{about}</p>
+      {/* Profile Details */}
+      <div className="p-6 flex-1 flex flex-col justify-between">
+        <div className="space-y-3">
+          {/* Skills Badges */}
+          {skills && skills.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {skills.slice(0, 4).map((skill, index) => (
+                <span 
+                  key={index} 
+                  className="text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary uppercase tracking-wider"
+                >
+                  {skill}
+                </span>
+              ))}
+              {skills.length > 4 && (
+                <span className="text-[9px] font-extrabold px-2.5 py-1 rounded-lg bg-base-content/10 text-base-content/70 uppercase">
+                  +{skills.length - 4} more
+                </span>
+              )}
+            </div>
+          )}
+          
+          <p className="text-xs font-medium text-base-content/75 line-clamp-3 leading-relaxed">
+            {about || "No bio provided."}
+          </p>
+        </div>
 
-        {/* 👇 2. Wrap the buttons in this condition so they only show if it is NOT a preview */}
+        {/* Action Buttons for non-preview mode */}
         {!isPreview && (
-          <div className="card-actions justify-between mt-4">
+          <div className="flex items-center justify-between gap-4 mt-4">
             <button
-              className="btn btn-ghost flex-1"
+              className="btn btn-outline border-base-content/10 text-base-content hover:bg-base-content/10 flex-1 rounded-xl font-bold h-11 min-h-[44px]"
               onClick={() => handleSendRequest("ignored", _id)}
-              disabled={isRequesting} // 👈 Disable while loading
+              disabled={isRequesting}
             >
               Ignore
             </button>
             <button
-              className="btn btn-primary flex-1"
+              className="btn btn-primary flex-1 rounded-xl font-bold text-primary-content h-11 min-h-[44px] shadow-lg shadow-primary/20"
               onClick={() => handleSendRequest("interested", _id)}
-              disabled={isRequesting} // 👈 Disable while loading
+              disabled={isRequesting}
             >
-              {isRequesting ? "Sending..." : "Interested"}
+              {isRequesting ? "Connecting..." : "Connect"}
             </button>
           </div>
         )}

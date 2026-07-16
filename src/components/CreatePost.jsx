@@ -114,51 +114,101 @@ const CreatePost = ({ onPostCreated }) => {
   // 4. DYNAMIC UI RENDER
   // ==========================================
   return (
-    <div className="card bg-base-200 shadow-xl border border-primary/20 w-full max-w-3xl mx-auto mb-8">
-      <div className="card-body p-6">
+    <div className="w-full max-w-3xl mx-auto mb-8 rounded-3xl bg-base-200/50 backdrop-blur-xl border border-base-content/10 shadow-2xl overflow-hidden">
+      <div className="p-6 sm:p-8">
         
-        {/* POST TYPE SELECTOR (DaisyUI Tabs) */}
-        <div className="tabs tabs-boxed bg-base-300 mb-6 flex-wrap justify-center sm:justify-start">
-          <a className={`tab ${postType === "devlog" ? "tab-active bg-primary text-primary-content font-bold" : ""}`} onClick={() => setPostType("devlog")}>⚡ Dev Log</a>
-          <a className={`tab ${postType === "article" ? "tab-active bg-primary text-primary-content font-bold" : ""}`} onClick={() => setPostType("article")}>📝 Article</a>
-          <a className={`tab ${postType === "question" ? "tab-active bg-error text-error-content font-bold" : ""}`} onClick={() => setPostType("question")}>🐛 Ask Question</a>
-          <a className={`tab ${postType === "launch" ? "tab-active bg-success text-success-content font-bold" : ""}`} onClick={() => setPostType("launch")}>🚀 Project Launch</a>
+        {/* POST TYPE SELECTOR (Modern Pill Tabs) */}
+        <div className="tabs tabs-boxed bg-base-300/40 p-1.5 rounded-2xl mb-6 flex-wrap justify-center sm:justify-start gap-1 border border-base-content/5">
+          <button 
+            type="button"
+            className={`tab rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              postType === "devlog" 
+                ? "bg-primary text-primary-content shadow-lg shadow-primary/10" 
+                : "text-base-content/65 hover:text-base-content"
+            }`} 
+            onClick={() => setPostType("devlog")}
+          >
+            ⚡ Dev Log
+          </button>
+          <button 
+            type="button"
+            className={`tab rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              postType === "article" 
+                ? "bg-primary text-primary-content shadow-lg shadow-primary/10" 
+                : "text-base-content/65 hover:text-base-content"
+            }`} 
+            onClick={() => setPostType("article")}
+          >
+            📝 Article
+          </button>
+          <button 
+            type="button"
+            className={`tab rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              postType === "question" 
+                ? "bg-error text-error-content shadow-lg shadow-error/10" 
+                : "text-base-content/65 hover:text-base-content"
+            }`} 
+            onClick={() => setPostType("question")}
+          >
+            🐛 Ask Question
+          </button>
+          <button 
+            type="button"
+            className={`tab rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              postType === "launch" 
+                ? "bg-success text-success-content shadow-lg shadow-success/10" 
+                : "text-base-content/65 hover:text-base-content"
+            }`} 
+            onClick={() => setPostType("launch")}
+          >
+            🚀 Project Launch
+          </button>
         </div>
 
-        {/* ==========================================
-            DYNAMIC FIELDS (These appear/disappear based on the tab!) 
-            ========================================== */}
-        <div className="space-y-4">
+        {/* DYNAMIC FIELDS */}
+        <div className="space-y-5">
           
-          {/* TITLE: Articles, Questions, and Launches need titles. Quick Dev Logs do not. */}
+          {/* TITLE: Articles, Questions, and Launches */}
           {postType !== "devlog" && (
-            <input 
-              type="text" 
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder={postType === "question" ? "What's the bug?" : "Give your post a catchy title..."} 
-              className="input input-bordered w-full font-bold text-lg" 
-            />
+            <div className="form-control">
+              <input 
+                type="text" 
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                placeholder={postType === "question" ? "Describe the core issue / bug..." : "Give your post a catchy title..."} 
+                className="input input-bordered w-full font-bold text-base bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl" 
+              />
+            </div>
           )}
 
-          {/* MAIN CONTENT: Every post type needs this. It's where they write the Markdown. */}
-          <textarea 
-            name="content"
-            value={formData.content}
-            onChange={handleInputChange}
-            placeholder={postType === "question" ? "Describe the error, what you've tried so far..." : "What are you working on today? (Markdown supported)"} 
-            className="textarea textarea-bordered w-full h-32 text-base"
-          ></textarea>
+          {/* MAIN CONTENT */}
+          <div className="form-control">
+            <textarea 
+              name="content"
+              value={formData.content}
+              onChange={handleInputChange}
+              required
+              placeholder={postType === "question" ? "Provide complete context about the issue, what you have tried, and copy-paste any relevant error messages..." : "What are you working on today? (Markdown is fully supported)"} 
+              className="textarea textarea-bordered w-full h-36 text-sm bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl leading-relaxed"
+            ></textarea>
+          </div>
 
-          {/* CODE SNIPPET: Great for Dev Logs and Questions */}
+          {/* CODE SNIPPET */}
           {(postType === "devlog" || postType === "question") && (
-            <div className="bg-base-300 p-3 rounded-lg border border-base-content/10">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold uppercase opacity-50 tracking-wider">💻 Attach Code Snippet (Optional)</span>
+            <div className="p-4 rounded-2xl bg-neutral text-neutral-content border border-base-content/10 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black uppercase tracking-wider text-neutral-content/60">💻 Code Snippet (Optional)</span>
+                
                 {/* Language Selector */}
-                <select name="codeLanguage" value={formData.codeLanguage} onChange={handleInputChange} className="select select-bordered select-xs">
-                  <option value="javascript">JavaScript</option>
+                <select 
+                  name="codeLanguage" 
+                  value={formData.codeLanguage} 
+                  onChange={handleInputChange} 
+                  className="select select-bordered select-xs bg-neutral-focus text-neutral-content border-neutral-content/10 rounded-lg text-[10px]"
+                >
+                  <option value="javascript">JavaScript / JSX</option>
                   <option value="python">Python</option>
                   <option value="java">Java</option>
                   <option value="cpp">C++</option>
@@ -169,35 +219,39 @@ const CreatePost = ({ onPostCreated }) => {
                 name="codeSnippet"
                 value={formData.codeSnippet}
                 onChange={handleInputChange}
-                placeholder="Paste your code here..." 
-                className="textarea textarea-ghost w-full font-mono text-sm bg-base-100"
+                className="textarea textarea-ghost w-full font-mono text-xs bg-neutral-focus text-neutral-content focus:outline-none focus:bg-neutral-focus/80 h-32 leading-relaxed"
+                placeholder="Paste code snippet here..."
               ></textarea>
             </div>
           )}
 
-          {/* PROJECT URL: Only shown if they are announcing a Launch */}
+          {/* PROJECT URL */}
           {postType === "launch" && (
-            <input 
-              type="url" 
-              name="projectUrl"
-              value={formData.projectUrl}
-              onChange={handleInputChange}
-              placeholder="🔗 Link to your live app or GitHub..." 
-              className="input input-bordered w-full" 
-            />
+            <div className="form-control">
+              <input 
+                type="url" 
+                name="projectUrl"
+                value={formData.projectUrl}
+                onChange={handleInputChange}
+                required
+                placeholder="🔗 Live URL link to your app, repository, or website..." 
+                className="input input-bordered w-full bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl text-sm" 
+              />
+            </div>
           )}
 
-          {/* ==========================================
-              BOTTOM TOOLBAR (Tags, Images, Submit)
-              ========================================== */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mt-4 pt-4 border-t border-base-300">
+          {/* BOTTOM TOOLBAR (Tags, Images, Submit) */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center mt-6 pt-5 border-t border-base-content/10">
             
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto flex-1">
               {/* Image Uploader */}
-              <div>
+              <div className="shrink-0">
                 <input type="file" id="postImageUpload" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                <label htmlFor="postImageUpload" className={`btn btn-sm btn-ghost border-dashed border-2 border-base-content/20 ${isUploading ? 'loading' : ''}`}>
-                  📸 Add Media
+                <label 
+                  htmlFor="postImageUpload" 
+                  className={`btn btn-sm btn-outline border-base-content/10 hover:bg-base-content/5 text-base-content rounded-xl h-9 min-h-[36px] font-semibold text-xs transition-all ${isUploading ? 'loading' : ''}`}
+                >
+                  📸 Add Screenshot
                 </label>
               </div>
 
@@ -207,29 +261,36 @@ const CreatePost = ({ onPostCreated }) => {
                 name="tags"
                 value={formData.tags}
                 onChange={handleInputChange}
-                placeholder="Tags (e.g. react, bug, api)" 
-                className="input input-bordered input-sm w-full sm:w-64" 
+                placeholder="Tags (comma-separated, e.g. react, api)" 
+                className="input input-bordered input-sm w-full sm:w-64 bg-base-100/50 border-base-content/10 focus:border-primary focus:outline-none transition-all rounded-xl text-xs h-9" 
               />
             </div>
 
             {/* Post Button */}
-            <button 
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleSubmit} 
               disabled={isSubmitting || !formData.content.trim()} 
-              className={`btn btn-sm sm:btn-md w-full sm:w-auto ${postType === "launch" ? "btn-success" : postType === "question" ? "btn-error" : "btn-primary"}`}
+              className={`btn btn-sm sm:btn-md rounded-xl font-bold tracking-wide w-full sm:w-auto h-9 min-h-[36px] ${
+                postType === "launch" 
+                  ? "btn-success shadow-lg shadow-success/10 text-success-content" 
+                  : postType === "question" 
+                    ? "btn-error shadow-lg shadow-error/10 text-error-content" 
+                    : "btn-primary shadow-lg shadow-primary/10 text-primary-content"
+              }`}
             >
               {isSubmitting ? "Posting..." : "Post to DevNet"}
-            </button>
+            </motion.button>
 
           </div>
 
-          {/* Image Previews (Shows tiny thumbnails of uploaded pictures before posting) */}
+          {/* Image Previews */}
           {formData.images.length > 0 && (
-            <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+            <div className="flex gap-3 mt-4 overflow-x-auto pb-2">
               {formData.images.map((img, idx) => (
-                <div key={idx} className="indicator">
-                  {/* Note: In a real app, you'd add an 'X' button here to remove the image from the array */}
-                  <img src={img} alt="Preview" className="w-16 h-16 object-cover rounded shadow-md border border-base-300" />
+                <div key={idx} className="relative group shrink-0">
+                  <img src={img} alt="Preview" className="w-16 h-16 object-cover rounded-xl shadow-md border border-base-content/10" />
                 </div>
               ))}
             </div>
