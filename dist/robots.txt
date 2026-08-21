@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://devnet.co.in/sitemap.xml
