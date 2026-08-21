@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useSelector } from "react-redux";
-import { useSocket } from "../utils/SocketContext"; 
+import { useSocket } from "../context/SocketContext"; 
 
 const PostDetails = () => {
   const { postId } = useParams();

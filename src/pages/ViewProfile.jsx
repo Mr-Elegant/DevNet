@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import VerifiedBadge from "./VerifiedBadge";
+import VerifiedBadge from "../components/VerifiedBadge";
 
 const ViewProfile = () => {
   const { userId } = useParams(); // Gets the ID from the URL (/profile/:userId)

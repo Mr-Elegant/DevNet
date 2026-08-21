@@ -1,18 +1,20 @@
 import axios from "axios"
 import { useDispatch, useSelector } from 'react-redux'
 import { BASE_URL } from '../utils/constants'
-import Footer from './Footer'
-import NavBar from './NavBar'
-import { Outlet, useNavigate } from 'react-router-dom'
-import {addUser} from "../utils/userSlice.js"
-import { addNotification } from "../utils/notificationSlice.js"
+import Footer from '../components/Footer'
+import NavBar from '../components/NavBar'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import {addUser} from "../store/userSlice"
+import { addNotification } from "../store/notificationSlice"
 import { useEffect } from 'react'
-import { useSocket } from "../utils/SocketContext.jsx"
-import BottomNav from "./BottomNav.jsx"
+import { useSocket } from "../context/SocketContext"
+import BottomNav from "../components/BottomNav"
+import { AnimatePresence, motion } from "framer-motion"
 
 const Body = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const userData = useSelector((store) => store.user);
   const socket = useSocket();    // 👈 GET SOCKET INSTANCE
 
@@ -97,7 +99,7 @@ const Body = () => {
     <div className="flex flex-col min-h-screen">
       <NavBar />
       
-      <main className="flex-1 container mx-auto px-4 py-6">
+      <main className="flex-1 container mx-auto px-4 py-6 relative">
         <Outlet />
       </main>
 

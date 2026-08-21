@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const getInitialTheme = () => {
   const savedTheme = localStorage.getItem("devnet-theme");
-  return savedTheme || "dark";
+  return savedTheme || "devnet";
 };
 
 const themeSlice = createSlice({

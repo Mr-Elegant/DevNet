@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { useSocket } from "../utils/SocketContext";
+import { useSocket } from "../context/SocketContext";
 import EmojiPicker from "emoji-picker-react"; // 👈 New Import
 import {
   Send,

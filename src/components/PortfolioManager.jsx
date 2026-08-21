@@ -5,7 +5,7 @@ import { useState } from "react"; // Hook for local UI state (form inputs, toggl
 import { useDispatch, useSelector } from "react-redux"; // Hooks to interact with Redux store
 import axios from "axios"; // HTTP client for API requests
 import { BASE_URL } from "../utils/constants"; // Backend server URL
-import { addUser } from "../utils/userSlice"; // Redux action to update the user globally
+import { addUser } from "../store/userSlice"; // Redux action to update the user globally
 
 const PortfolioManager = () => {
   // ==========================================

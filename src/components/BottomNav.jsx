@@ -17,7 +17,7 @@ const BottomNav = () => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:hidden z-[1000] bg-base-100/75 backdrop-blur-xl border border-base-content/10 rounded-2xl py-2 flex items-center justify-around shadow-2xl">
+    <div className="fixed bottom-4 left-4 right-4 sm:hidden z-[1000] bg-base-100/70 backdrop-blur-2xl border border-base-content/10 rounded-2xl py-2 flex items-center justify-around shadow-2xl shadow-primary/10">
       
       {/* 1. SWIPE TAB */}
       <NavLink to="/" className={getBtmNavClass}>

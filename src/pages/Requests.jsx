@@ -1,11 +1,11 @@
 import { useDispatch, useSelector } from "react-redux";
-import { addRequests, removeRequest } from "../utils/requestsSlice";
+import { addRequests, removeRequest } from "../store/requestsSlice";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import VerifiedBadge from "./VerifiedBadge";
+import VerifiedBadge from "../components/VerifiedBadge";
 import { motion } from "framer-motion";
 
 const Requests = () => {

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tldraw } from "tldraw";
 import "tldraw/tldraw.css";
-import { useSocket } from "../utils/SocketContext";
+import { useSocket } from "../context/SocketContext";
 import { ArrowLeft } from "lucide-react";
 
 // Pure Memoized Component to absolutely guarantee Tldraw NEVER re-renders from parent state changes

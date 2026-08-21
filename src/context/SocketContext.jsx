@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { useSelector } from "react-redux";
-import { BASE_URL } from "./constants";
+import { BASE_URL } from "../utils/constants";
 
 const SocketContext = createContext(null);
 

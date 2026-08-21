@@ -1,7 +1,7 @@
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch } from "react-redux";
-import { removeUserFromFeed } from "../utils/feedSlice";
+import { removeUserFromFeed } from "../store/feedSlice";
 
 const ProfileCard = ({ user }) => {
   const { _id, firstName, lastName, photoUrl, age, gender, about } = user;  // Destructure user properties
@@ -12,19 +12,19 @@ const ProfileCard = ({ user }) => {
  return (
     <div className="relative w-80 rounded-2xl overflow-hidden group transition-transform hover:scale-105">
       {/* Animated neon border */}
-      <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 animate-spin-slow opacity-80 group-hover:opacity-100"></div>
+      <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-r from-primary via-secondary to-accent animate-spin-slow opacity-80 group-hover:opacity-100"></div>
 
       {/* Frosted glass card */}
-      <div className="relative rounded-2xl overflow-hidden bg-[#1f1f1f]/80 backdrop-blur-md shadow-xl z-10">
+      <div className="relative rounded-2xl overflow-hidden bg-base-200/80 backdrop-blur-2xl shadow-2xl z-10">
         <div className="relative">
           <img
             src={photoUrl}
             alt={`${firstName} ${lastName}`}
             className="w-full h-96 object-cover"
           />
-          <div className="absolute bottom-0 w-full bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 text-white">
-            <h2 className="text-2xl font-bold text-pink-400">{firstName} {lastName}</h2>
-            {age && gender && <p className="text-sm text-blue-300">{age}, {gender}</p>}
+          <div className="absolute bottom-0 w-full bg-gradient-to-t from-base-300/90 via-base-300/40 to-transparent p-4 text-base-content">
+            <h2 className="text-2xl font-black text-primary">{firstName} {lastName}</h2>
+            {age && gender && <p className="text-sm text-secondary font-bold tracking-wide uppercase">{age}, {gender}</p>}
           </div>
         </div>
 

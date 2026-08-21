@@ -1,13 +1,13 @@
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { addConnections } from "../utils/connectionSlice";
+import { addConnections } from "../store/connectionSlice";
 import { Link } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
-import { useSocket } from "../utils/SocketContext"; 
+import { useSocket } from "../context/SocketContext"; 
 import AOS from "aos";
 import "aos/dist/aos.css";
-import VerifiedBadge from "./VerifiedBadge";
+import VerifiedBadge from "../components/VerifiedBadge";
 import { motion } from "framer-motion";
 
 const Connections = () => {

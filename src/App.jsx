@@ -1,24 +1,24 @@
 import { Route, Routes, Navigate } from "react-router-dom"; // ✨ Added Navigate
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { SocketProvider } from "./utils/SocketContext";
-import Body from "./components/Body";
-import Login from "./components/Login";
-import Profile from "./components/Profile";
-import Feed from "./components/Feed";
-import Connections from "./components/Connections";
-import Requests from "./components/Requests";
-import Signup from "./components/Signup";
-import Premium from "./components/Premium";
-import Chat from "./components/Chat";
-import GlobalFeed from "./components/GlobalFeed";
-import PostDetails from "./components/PostDetails";
-import Search from "./components/Search";
+import { SocketProvider } from "./context/SocketContext";
+import Body from "./layouts/Body";
+import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import Feed from "./pages/Feed";
+import Connections from "./pages/Connections";
+import Requests from "./pages/Requests";
+import Signup from "./pages/Signup";
+import Premium from "./pages/Premium";
+import Chat from "./pages/Chat";
+import GlobalFeed from "./pages/GlobalFeed";
+import PostDetails from "./pages/PostDetails";
+import Search from "./pages/Search";
 import SpiderCursor from "./components/SpiderCursor";
-import ViewProfile from "./components/ViewProfile";
-import Whiteboard from "./components/Whiteboard"; // ✨ Added Whiteboard Import
-import AdminDashboard from "./components/AdminDashboard"; // ✨ Added AdminDashboard Import
-import { useSocket } from "./utils/SocketContext";
+import ViewProfile from "./pages/ViewProfile";
+import Whiteboard from "./pages/Whiteboard"; // ✨ Added Whiteboard Import
+import AdminDashboard from "./pages/AdminDashboard"; // ✨ Added AdminDashboard Import
+import { useSocket } from "./context/SocketContext";
 import { useNavigate } from "react-router-dom";
 
 // 🛡️ Admin Route Protection Component

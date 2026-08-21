@@ -1,18 +1,38 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @plugin "daisyui";
 
-/* OPTIONAL: limit / define themes */
-/* @config {
-  daisyui: {
-    themes: light, dark, cupcake, dracula;
-  }
-} */
+:root {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
 
 @plugin "daisyui" {
   themes: all;
 }
 
+[data-theme="devnet"] {
+  --color-base-100: oklch(14% 0 0);
+  --color-base-200: oklch(10% 0 0);
+  --color-base-300: oklch(8% 0 0);
+  --color-base-content: oklch(98% 0 0);
+  
+  --color-primary: oklch(65% 0.25 295); 
+  --color-primary-content: oklch(98% 0 0);
+  
+  --color-secondary: oklch(75% 0.18 190); 
+  --color-secondary-content: oklch(15% 0 0);
 
+  --color-accent: oklch(70% 0.2 340); 
+  --color-accent-content: oklch(15% 0 0);
+  
+  --color-neutral: oklch(20% 0 0);
+  --color-neutral-content: oklch(90% 0 0);
+  
+  --color-info: oklch(75% 0.15 220);
+  --color-success: oklch(70% 0.15 150);
+  --color-warning: oklch(80% 0.15 80);
+  --color-error: oklch(65% 0.2 20);
+}
 
 @keyframes spin {
   from {
@@ -39,5 +59,3 @@
 .animate-shimmer {
   animation: shimmer 3s infinite;
 }
-
-

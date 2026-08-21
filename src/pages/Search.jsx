@@ -3,7 +3,7 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { Link } from "react-router-dom";
 
-import VerifiedBadge from "./VerifiedBadge";
+import VerifiedBadge from "../components/VerifiedBadge";
 
 const Search = () => {
   const [searchText, setSearchText] = useState("");

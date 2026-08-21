@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import CreatePost from "./CreatePost";
+import CreatePost from "../components/CreatePost";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import VerifiedBadge from "./VerifiedBadge";
+import VerifiedBadge from "../components/VerifiedBadge";
 import { motion } from "framer-motion";
 
 const GlobalFeed = () => {

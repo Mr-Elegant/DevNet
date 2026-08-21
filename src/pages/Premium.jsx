@@ -2,7 +2,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BASE_URL } from "../utils/constants";
-import { addUser } from "../utils/userSlice";
+import { addUser } from "../store/userSlice";
 import { motion } from "framer-motion";
 
 const Premium = () => {

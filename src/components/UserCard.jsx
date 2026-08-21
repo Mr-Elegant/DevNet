@@ -2,8 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useDispatch, useSelector } from "react-redux";
-import { removeUserFromFeed } from "../utils/feedSlice";
-import { useSocket } from "../utils/SocketContext";
+import { removeUserFromFeed } from "../store/feedSlice";
+import { useSocket } from "../context/SocketContext";
 import VerifiedBadge from "./VerifiedBadge";
 
 const UserCard = ({ user, isPreview = false }) => {
@@ -44,7 +44,7 @@ const UserCard = ({ user, isPreview = false }) => {
   };
 
   return (
-    <div className="w-96 rounded-3xl overflow-hidden bg-base-200/50 backdrop-blur-xl border border-base-content/10 shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:border-primary/20 flex flex-col h-[520px]">
+    <div className="w-96 rounded-3xl overflow-hidden bg-base-200/60 backdrop-blur-2xl border border-base-content/10 shadow-2xl shadow-base-content/5 transition-all duration-500 hover:-translate-y-2 hover:shadow-primary/20 hover:border-primary/40 flex flex-col h-[520px] group">
       {/* Photo with Overlay */}
       <div className="relative h-[340px] w-full overflow-hidden">
         <img

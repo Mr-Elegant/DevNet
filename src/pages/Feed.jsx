@@ -6,10 +6,10 @@ import { BASE_URL } from "../utils/constants"; // Your backend server URL
 import { useDispatch, useSelector } from "react-redux"; // Redux hooks for global state management
 import { useEffect, useState } from "react"; // React hooks for component lifecycle and local memory
 import { useNavigate } from "react-router-dom"; // Navigation hook
-import { addFeed, removeUserFromFeed } from "../utils/feedSlice"; // Redux actions to update the feed list
-import UserCard from "./UserCard"; // Your custom UI component to display user info
-import SwipeableCard from "./SwipeableCard"; // Custom Framer Motion swiper
-import { useSocket } from "../utils/SocketContext"; // Your global socket connection for real-time notifications
+import { addFeed, removeUserFromFeed } from "../store/feedSlice"; // Redux actions to update the feed list
+import UserCard from "../components/UserCard"; // Your custom UI component to display user info
+import SwipeableCard from "../components/SwipeableCard"; // Custom Framer Motion swiper
+import { useSocket } from "../context/SocketContext"; // Your global socket connection for real-time notifications
 import { motion } from "framer-motion"; // Animation library
 
 const Feed = () => {

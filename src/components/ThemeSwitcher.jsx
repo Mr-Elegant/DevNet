@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { setTheme } from "../utils/themeSlice";
+import { setTheme } from "../store/themeSlice";
 import { Palette } from "lucide-react";
 
 const ThemeSwitcher = () => {
@@ -7,7 +7,7 @@ const ThemeSwitcher = () => {
   const currentTheme = useSelector((store) => store.theme);
 
   const themes = [
-    "light", "dark", "cupcake", "bumblebee", "emerald", "corporate",
+    "devnet", "light", "dark", "cupcake", "bumblebee", "emerald", "corporate",
     "synthwave", "retro", "cyberpunk", "valentine", "halloween", "garden",
     "forest", "aqua", "lofi", "pastel", "fantasy", "wireframe", "black",
     "luxury", "dracula", "cmyk", "autumn", "business", "acid", "lemonade",

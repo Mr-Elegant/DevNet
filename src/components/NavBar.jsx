@@ -2,8 +2,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, NavLink } from "react-router-dom";
 import { BASE_URL } from "../utils/constants";
 import axios from "axios";
-import { removeUser } from "../utils/userSlice";
-import { removeNotification } from "../utils/notificationSlice";
+import { removeUser } from "../store/userSlice";
+import { removeNotification } from "../store/notificationSlice";
 import { motion } from "framer-motion";
 import ThemeSwitcher from "./ThemeSwitcher";
 // ✨ IMPORT THE BADGE HERE
@@ -51,7 +51,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-base-100/60 backdrop-blur-xl border-b border-base-content/10 shadow-lg shadow-base-content/5 transition-all">
+    <nav className="sticky top-0 z-50 bg-base-100/70 backdrop-blur-2xl border-b border-base-content/10 shadow-xl shadow-primary/5 transition-all">
       <div className="flex items-center justify-between px-6 py-3.5">
         {/* LEFT SIDE: LOGO */}
         <Link
