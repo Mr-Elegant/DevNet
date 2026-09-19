@@ -93,7 +93,7 @@ Finding engineering co-founders, project collaborators, code mentors, or tech pe
 
 ### ⚡ 7. 24/7 Resilience & Background Services
 * **Automated Keep-Alive Heartbeat:** Built-in Node scheduler that self-pings the public `/health` endpoint every 12 minutes, preventing Render free-tier instances from idling.
-* **Daily 9:00 AM IST Email Digest:** Automated `node-cron` background worker that queries pending connection requests and dispatches transactional summary emails via AWS SES.
+* **Daily 9:00 AM IST Email Digest:** Automated `node-cron` background worker that queries pending connection requests and dispatches transactional summary emails via Resend (`notifications@devnet.co.in`).
 
 ---
 
@@ -126,7 +126,7 @@ flowchart TB
         Razorpay["Razorpay Payment Gateway"]
         GoogleOAuth["Google Cloud OAuth 2.0"]
         GitHubOAuth["GitHub OAuth Apps"]
-        AWSSES["AWS Simple Email Service (ap-south-1)"]
+        Resend["Resend Email API (notifications@devnet.co.in)"]
     end
 
     Browser -->|HTTPS Requests| CF
@@ -142,7 +142,7 @@ flowchart TB
     ExpressServer -->|Passport Strategy Callbacks| GoogleOAuth
     ExpressServer -->|Passport Strategy Callbacks| GitHubOAuth
 
-    CronService -->|Daily 9:00 AM Digest| AWSSES
+    CronService -->|Daily 9:00 AM Digest| Resend
     KeepAlive -->|Self-Ping /health every 12 min| ExpressServer
 ```
 
@@ -495,6 +495,8 @@ DevNet is architected to run **100% free forever** on decoupled cloud platforms:
   * `JWT_SECRET` = *(Secret)*
   * `BACKEND_URL` = `https://devnet-backend-kor2.onrender.com`
   * `FRONTEND_URL` = `https://devnet.co.in`
+  * `RESEND_API_KEY` = `re_...`
+  * `EMAIL_FROM` = `DevNet <notifications@devnet.co.in>`
   * Cloudinary, Razorpay, and OAuth credentials.
 * **Keep-Alive:** The backend includes a self-pinging keep-alive worker (`src/utils/keepAlive.js`) that queries `/health` every 12 minutes to keep the free service awake 24/7.
 
