@@ -74,7 +74,7 @@ const NavBar = () => {
         </Link>
 
         {/* RIGHT SIDE: CONTROLS */}
-        {user && (
+        {user ? (
           <div className="flex items-center gap-3.5">
             {/* DESKTOP LINKS */}
             <div className="hidden md:flex items-center gap-1">
