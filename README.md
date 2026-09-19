@@ -105,16 +105,16 @@ Finding engineering co-founders, project collaborators, code mentors, or tech pe
 flowchart TB
     subgraph Clients["Clients & Edge Network"]
         Browser["Desktop & Mobile Browsers"]
-        CF["Cloudflare DNS (cname.vercel-dns.com)"]
+        CF["Cloudflare DNS"]
     end
 
     subgraph FrontendPlatform["Frontend Tier (Vercel)"]
         VercelCDN["Vercel Global Edge CDN"]
-        ReactApp["React 19 SPA (Vite + Tailwind v4 + Redux)"]
+        ReactApp["React 19 SPA (Vite, Tailwind v4, Redux)"]
     end
 
     subgraph BackendPlatform["Backend Tier (Render / AWS EC2)"]
-        ExpressServer["Express 5 REST API (:10000 / :3000)"]
+        ExpressServer["Express 5 REST API"]
         SocketServer["Socket.IO WebSocket Engine"]
         CronService["Node-Cron Background Workers"]
         KeepAlive["Keep-Alive Heartbeat Service"]
@@ -126,24 +126,24 @@ flowchart TB
         Razorpay["Razorpay Payment Gateway"]
         GoogleOAuth["Google Cloud OAuth 2.0"]
         GitHubOAuth["GitHub OAuth Apps"]
-        Resend["Resend Email API (notifications@devnet.co.in)"]
+        Resend["Resend Email API"]
     end
 
-    Browser -->|HTTPS Requests| CF
-    CF -->|Fast Anycast Edge| VercelCDN
+    Browser -->|"HTTPS Requests"| CF
+    CF -->|"Fast Anycast Edge"| VercelCDN
     VercelCDN --> ReactApp
 
-    ReactApp -->|REST API Requests (withCredentials)| ExpressServer
-    ReactApp -->|Persistent WebSockets (WSS)| SocketServer
+    ReactApp -->|"REST API Requests with Credentials"| ExpressServer
+    ReactApp -->|"Persistent WebSockets (WSS)"| SocketServer
 
-    ExpressServer -->|Mongoose ODM| MongoDB
-    ExpressServer -->|Image / File Streams| Cloudinary
-    ExpressServer -->|Order Creation & Webhooks| Razorpay
-    ExpressServer -->|Passport Strategy Callbacks| GoogleOAuth
-    ExpressServer -->|Passport Strategy Callbacks| GitHubOAuth
+    ExpressServer -->|"Mongoose ODM"| MongoDB
+    ExpressServer -->|"Image / File Streams"| Cloudinary
+    ExpressServer -->|"Order Creation & Webhooks"| Razorpay
+    ExpressServer -->|"Passport Strategy Callbacks"| GoogleOAuth
+    ExpressServer -->|"Passport Strategy Callbacks"| GitHubOAuth
 
-    CronService -->|Daily 9:00 AM Digest| Resend
-    KeepAlive -->|Self-Ping /health every 12 min| ExpressServer
+    CronService -->|"Daily 9:00 AM Digest"| Resend
+    KeepAlive -->|"Self-Ping /health every 12 min"| ExpressServer
 ```
 
 ---
@@ -209,7 +209,7 @@ sequenceDiagram
         API->>DB: Create new User record
     end
     API->>API: Generate JWT token (HS256)
-    API-->>Client: Set HTTP-only cookie `token` (secure, sameSite: none)
+    API-->>Client: Set HTTP-only cookie token (secure, sameSite: none)
     API->>Client: Redirect to https://devnet.co.in/
     Client->>API: GET /profile/view (with cookie)
     API-->>Client: Return Authenticated User Profile
