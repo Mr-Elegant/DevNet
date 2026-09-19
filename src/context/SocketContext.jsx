@@ -16,10 +16,14 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     // 1. Connect when user logs in
     if (user && !socket) {
-      const newSocket = io(location.hostname === "localhost" ? BASE_URL : "/", {
-        path: location.hostname === "localhost" ? undefined : "/api/socket.io",
+      const isExternal = BASE_URL.startsWith("http://") || BASE_URL.startsWith("https://");
+      const socketUrl = isExternal ? BASE_URL : "/";
+      const socketOptions = {
         withCredentials: true,
-      });
+        ...(isExternal ? {} : { path: "/api/socket.io" }),
+      };
+
+      const newSocket = io(socketUrl, socketOptions);
 
       newSocket.on("connect", () => {
         console.log("🔌 Global Socket Connected:", newSocket.id);

@@ -349,7 +349,7 @@ const Signup = () => {
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 type="button"
-                onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/google`}
+                onClick={() => window.location.href = `${BASE_URL}/auth/google`}
                 className="btn btn-outline border-base-content/10 hover:border-primary hover:bg-primary/5 text-base-content hover:text-primary rounded-xl flex items-center gap-2.5 font-semibold text-sm transition-all h-11"
               >
                 <img src="/google-icon.png" alt="Google" className="w-5 h-5 object-contain" />
@@ -360,7 +360,7 @@ const Signup = () => {
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 type="button"
-                onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/auth/github`}
+                onClick={() => window.location.href = `${BASE_URL}/auth/github`}
                 className="btn btn-outline border-base-content/10 hover:border-neutral-content hover:bg-neutral/5 text-base-content hover:text-neutral-content rounded-xl flex items-center gap-2.5 font-semibold text-sm transition-all h-11"
               >
                 <img src="/github-icon.png" alt="GitHub" className="w-5 h-5 object-contain" />
