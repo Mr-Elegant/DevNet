@@ -9,13 +9,13 @@
 [![Render](https://img.shields.io/badge/Backend-Render_Web_Service-46E3B7?style=for-the-badge&logo=render&logoColor=black)](https://render.com)
 [![React](https://img.shields.io/badge/React_19-Vite_6-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_v4-DaisyUI-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Framer Motion](https://img.shields.io/badge/Framer_Motion-Scrollytelling-ff0055?style=for-the-badge&logo=framer&logoColor=white)](https://www.framer.com/motion/)
 [![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--Time_Engine-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas_Cluster-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 
-**DevNet** is a modern, full-stack, real-time social networking and collaborative development platform designed exclusively for software engineers, designers, and tech creators. It combines the rapid discovery of swiping-based matchmaking with professional collaboration utilities: live multiplayer whiteboarding, instant chat with read receipts, tech Q&A community forums, and portfolio management.
+**DevNet** is a modern, full-stack, real-time social networking and collaborative development platform designed exclusively for software engineers, designers, and tech creators. It combines an interactive horizontal scroll-driven storytelling landing experience (`/story`) and swiping-based matchmaking with professional collaboration utilities: live multiplayer whiteboarding, instant chat with read receipts, tech Q&A community forums, and portfolio management.
 
-[Explore Live Demo](https://devnet.co.in) • [Report Bug](https://github.com/Mr-Elegant/DevNet/issues) • [Request Feature](https://github.com/Mr-Elegant/DevNet/issues)
-
+[Explore Live Demo](https://devnet.co.in) • [Experience Storytelling](https://devnet.co.in/story) • [Report Bug](https://github.com/Mr-Elegant/DevNet/issues)
 </div>
 
 ---
@@ -53,12 +53,25 @@ Finding engineering co-founders, project collaborators, code mentors, or tech pe
 
 ## 2. Feature Matrix ("Everything This App Does")
 
-### 🎴 1. Developer MatchMaker (Tinder-Style Discovery)
+### 📜 1. Horizontal Scroll-Driven Storytelling Experience ("The 0 to 1 Developer Journey")
+* **Narrative Concept:** Built to impress technical recruiters and prospective engineers by narrating the emotional transformation from solitary late-night coder to shipped product.
+* **Sticky Viewport Architecture:** Framer Motion (`useScroll`, `useSpring`, `useTransform`) pinned sticky viewport (`sticky top-16 h-[calc(100vh-4rem)]`) with zero layout shift or horizontal scrollbars.
+* **The 4 Interactive Acts:**
+  * **Act 01 // Midnight Isolation:** Live mock IDE (`distributedEngine.ts`) with line-by-line syntax highlighting and an interactive "Run Test" engine demonstrating the solo developer bottleneck.
+  * **Act 02 // Algorithmic Discovery:** Interactive 3D glassmorphic developer profile card with draggable physics (`drag="x"`, rotational tilt, spring snaps), 98% heuristic match score, verified skill pills, and particle celebration triggers.
+  * **Act 03 // Zero Latency Collaboration:** Split-screen synchronization displaying live Socket.IO chat simulation with read receipts alongside an animated collaborative whiteboard canvas with live moving collaborator cursors.
+  * **Act 04 // Shipped & Recognized:** Global community feed release card with an interactive live upvote counter, 3D Gold Verified badge, cloud telemetry ribbons, and magnetic signup CTAs.
+* **Zero-Feature-Loss Routing:**
+  * **Unauthenticated Visitors:** Visiting root `/` or `/story` renders the full-bleed Landing Showcase page ([`Landing.jsx`](./src/pages/Landing.jsx)) instead of an abrupt login redirect.
+  * **Authenticated Users:** Existing logged-in developers visiting `/` continue to see their Tinder card swiper ([`Feed.jsx`](./src/pages/Feed.jsx)), preserving 100% of all existing platform features.
+  * **Direct Access Route:** Dedicated `/story` route accessible at any time via navbar.
+
+### 🎴 2. Developer MatchMaker (Tinder-Style Discovery)
 * **Interactive Swiping Engine:** Built with `react-tinder-card` and `framer-motion` for fluid 60 FPS gesture-driven swiping.
 * **Smart Filtering:** Explore profiles based on technical skills (React, Node.js, Python, AWS, etc.), developer role, and bio.
 * **Connection Logic:** Swiping right sends an `interested` request; swiping left triggers an `ignored` state.
 
-### 💬 2. Real-Time Chat & Messaging Hub
+### 💬 3. Real-Time Chat & Messaging Hub
 * **Instant Delivery:** Sub-millisecond bidirectional communication via Socket.IO.
 * **Read Receipts & Delivery Indicators:**
   * `sent` (Single checkmark) &rarr; Message saved to database.
@@ -68,30 +81,30 @@ Finding engineering co-founders, project collaborators, code mentors, or tech pe
 * **Presence & Activity:** Live online/offline green status indicators and debounced "User is typing..." indicators.
 * **Message Management:** Secure, atomic message deletion with MongoDB `$pull` operators preventing unauthorized deletes.
 
-### 🎨 3. Collaborative Multiplayer Whiteboard
+### 🎨 4. Collaborative Multiplayer Whiteboard
 * **Powered by `tldraw`:** Unlimited infinite canvas supporting freehand drawing, geometric shapes, sticky notes, arrows, and asset embedding.
 * **Real-Time Room Synchronization:** Changes broadcast across room peers using dedicated Socket.IO whiteboard rooms (`whiteboard_${roomId}`).
 * **Instant Chat Invitations:** Send a whiteboard invite link directly in a 1-on-1 chat; the recipient can accept or reject in real time.
 
-### 🌐 4. Global Community Feed & Technical Q&A
+### 🌐 5. Global Community Feed & Technical Q&A
 * **Rich Developer Posts:** Post technical questions, project updates, or architectural thoughts.
 * **Syntax-Highlighted Code:** Full code-snippet support formatted for easy technical readability.
 * **Interactive Discussions:** Threaded comment hierarchy with reply chains.
 * **Accepted Answer Checkmark:** Post authors can mark the most helpful reply as "Accepted" (highlighted with a green checkmark).
 * **Social Reactions:** Real-time post like counts and engagement counters.
 
-### 👤 5. Developer Portfolio & GitHub Showcase
+### 👤 6. Developer Portfolio & GitHub Showcase
 * **Portfolio Showcase:** Add personal projects with titles, summaries, live preview URLs, and screenshots.
 * **GitHub Integration:** Display GitHub profile stats, primary languages, and repositories directly on your user card.
 * **Custom Avatar & Bio:** Cloudinary-backed profile picture uploads with cropping and skill badge tags.
 
-### 💎 6. Monetization & Premium Subscriptions
+### 💎 7. Monetization & Premium Subscriptions
 * **Tiered Memberships:**
   * **Silver Member:** Custom profile themes, elevated feed visibility.
   * **Gold Member:** Unlimited matchmaking swipes, verified gold badge, premium chat perks.
 * **Razorpay Gateway:** Secure order generation, client-side checkout modal, and cryptographically verified HMAC SHA-256 webhooks.
 
-### ⚡ 7. 24/7 Resilience & Background Services
+### ⚡ 8. 24/7 Resilience & Background Services
 * **Automated Keep-Alive Heartbeat:** Built-in Node scheduler that self-pings the public `/health` endpoint every 12 minutes, preventing Render free-tier instances from idling.
 * **Daily 9:00 AM IST Email Digest:** Automated `node-cron` background worker that queries pending connection requests and dispatches transactional summary emails via Resend (`notifications@devnet.co.in`).
 
@@ -380,35 +393,44 @@ src/store/
 
 ## 5. Step-by-Step User Manual ("How To Use Every Feature")
 
-### Step 1: Sign Up & Onboard
+### Step 1: Experience the Interactive Storytelling Showcase
+1. Navigate to [https://devnet.co.in](https://devnet.co.in) (or click **Story ✨** in the navigation bar).
+2. Scroll through the 4-act developer journey:
+   * **Act 01 (Midnight Isolation):** Interact with the mock IDE (`distributedEngine.ts`) and click **Run Test** to trigger live build diagnostics.
+   * **Act 02 (Algorithmic Discovery):** Grab and drag the 3D developer card horizontally with spring-physics swipe simulation.
+   * **Act 03 (Zero Latency Collaboration):** Watch real-time Socket.IO chat messages stream alongside a live multiplayer whiteboard simulation with moving cursors.
+   * **Act 04 (Shipped & Recognized):** Click the live upvote button on the launch card and explore the platform feature ribbons.
+3. Use the theme switcher dropdown in the navigation bar to preview DevNet across modern themes (`devnet`, `dark`, `cyberpunk`, `retro`, `synthwave`).
+
+### Step 2: Sign Up & Onboard
 1. Navigate to [https://devnet.co.in/signup](https://devnet.co.in/signup) or click **Sign In**.
 2. Sign up with email/password or use **Google / GitHub One-Click OAuth**.
 3. Complete your profile: upload your profile photo, write a bio, and add your skills (e.g., `React`, `Node.js`, `TypeScript`, `Docker`).
 
-### Step 2: Discover Developers (MatchMaker Swiping)
+### Step 3: Discover Developers (MatchMaker Swiping)
 1. Go to the **Feed / MatchMaker** tab (`/`).
 2. You will see floating developer profile cards showing their skills, photo, and bio.
 3. **Swipe Right** (or click the Heart/Green button) to express interest.
 4. **Swipe Left** (or click the Skip/Cross button) to pass.
 5. When two developers swipe right on each other, a **Mutual Connection** is created!
 
-### Step 3: Real-Time Chat & File Sharing
+### Step 4: Real-Time Chat & File Sharing
 1. Open the **Connections** tab to see your accepted developer network.
 2. Click on any connection to launch the **1-on-1 Chat Window**.
 3. Type messages with real-time **typing indicators**, **sent**, **delivered**, and **seen** status checkmarks.
 4. Click the attachment paperclip icon to upload code files, project PDFs, or images via Cloudinary.
 
-### Step 4: Live Whiteboard Collaboration
+### Step 5: Live Whiteboard Collaboration
 1. Inside any active chat conversation, click the **"Whiteboard"** button.
 2. An invitation is instantly transmitted to your partner's screen.
 3. Once accepted, both of you are placed in a shared, multiplayer `tldraw` canvas to sketch system architecture, flowchart algorithms, or wireframe UI concepts in real time.
 
-### Step 5: Community Feed & Technical Q&A
+### Step 6: Community Feed & Technical Q&A
 1. Open the **Community Feed** (`/posts`).
 2. Create a new post: share technical updates or paste code snippets with syntax highlighting.
 3. Comment on other developers' questions. If you are the post author, click the checkmark on the best reply to mark it as the **Accepted Answer**!
 
-### Step 6: Upgrade to Premium
+### Step 7: Upgrade to Premium
 1. Click on **Premium** in the navigation bar.
 2. Select **Silver Tier** or **Gold Tier**.
 3. Complete the checkout through Razorpay's secure checkout modal.
