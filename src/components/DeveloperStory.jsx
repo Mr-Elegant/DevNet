@@ -30,10 +30,10 @@ import { Link } from "react-router-dom";
 const DeveloperStory = () => {
   const containerRef = useRef(null);
 
-  // Framer Motion Scroll Progress Binding
+  // Framer Motion Scroll Progress Binding (offset against sticky navbar)
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"]
+    offset: ["start 64px", "end end"]
   });
 
   // Smooth Spring dampener for fluid trackpad and mouse wheel velocity
@@ -75,10 +75,10 @@ const DeveloperStory = () => {
   const scrollToAct = (actIndex) => {
     if (!containerRef.current) return;
     const containerTop = containerRef.current.offsetTop;
-    const totalHeight = containerRef.current.offsetHeight - window.innerHeight;
-    const targetScroll = containerTop + (actIndex / 3) * totalHeight;
+    const totalHeight = containerRef.current.offsetHeight - (window.innerHeight - 64);
+    const targetScroll = containerTop - 64 + (actIndex / 3) * totalHeight;
     window.scrollTo({
-      top: targetScroll,
+      top: Math.max(0, targetScroll),
       behavior: "smooth"
     });
   };
@@ -118,11 +118,11 @@ const DeveloperStory = () => {
   ];
 
   return (
-    <section ref={containerRef} className="relative h-[420vh] bg-base-300/40 text-base-content selection:bg-primary selection:text-primary-content">
+    <section ref={containerRef} className="relative h-[260vh] bg-base-300/40 text-base-content selection:bg-primary selection:text-primary-content">
       {/* ============================================================== */}
       {/* PINNED STICKY VIEWPORT CONTAINER                               */}
       {/* ============================================================== */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between">
+      <div className="sticky top-16 h-[calc(100vh-4rem)] w-full overflow-hidden flex flex-col justify-between z-30">
         
         {/* TOP STORY HUD (Progress Bar & Act Navigator) */}
         <div className="w-full z-40 bg-base-100/80 backdrop-blur-xl border-b border-base-content/10 px-4 md:px-8 py-3.5 transition-all">
@@ -181,18 +181,18 @@ const DeveloperStory = () => {
         {/* ============================================================== */}
         <motion.div 
           style={{ x }} 
-          className="flex h-[calc(100vh-68px)] w-[400vw] will-change-transform"
+          className="flex flex-1 w-[400vw] will-change-transform min-h-0"
         >
 
           {/* ============================================================ */}
           {/* ACT 1: THE SOLITARY 2 AM GRIND                               */}
           {/* ============================================================ */}
-          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-hidden">
+          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center px-4 py-3 sm:px-8 md:px-12 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center z-10">
+            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center z-10">
               
               {/* Left Column: Narrative */}
               <div className="lg:col-span-5 space-y-5">
@@ -330,12 +330,12 @@ const DeveloperStory = () => {
           {/* ============================================================ */}
           {/* ACT 2: THE MATCHMAKER SPARK                                   */}
           {/* ============================================================ */}
-          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-hidden">
+          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center px-4 py-3 sm:px-8 md:px-12 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-primary/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center z-10">
+            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center z-10">
               
               {/* Left Column: Narrative */}
               <div className="lg:col-span-5 space-y-5">
@@ -499,12 +499,12 @@ const DeveloperStory = () => {
           {/* ============================================================ */}
           {/* ACT 3: THE REAL-TIME WAR ROOM                                 */}
           {/* ============================================================ */}
-          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-hidden">
+          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center px-4 py-3 sm:px-8 md:px-12 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute top-10 right-1/3 w-96 h-96 bg-accent/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-10 left-10 w-96 h-96 bg-secondary/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center z-10">
+            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center z-10">
               
               {/* Left Column: Narrative */}
               <div className="lg:col-span-5 space-y-5">
@@ -700,12 +700,12 @@ const DeveloperStory = () => {
           {/* ============================================================ */}
           {/* ACT 4: SHIPPED TO PRODUCTION & COMMUNITY LAUNCH               */}
           {/* ============================================================ */}
-          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center p-6 md:p-12 lg:p-16 relative overflow-hidden">
+          <div className="w-screen flex-shrink-0 h-full flex items-center justify-center px-4 py-3 sm:px-8 md:px-12 relative overflow-hidden">
             {/* Ambient Background Glow */}
             <div className="absolute top-1/4 right-10 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-warning/15 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center z-10">
+            <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center z-10">
               
               {/* Left Column: Narrative & Final CTA */}
               <div className="lg:col-span-5 space-y-5">

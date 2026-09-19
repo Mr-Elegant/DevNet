@@ -81,7 +81,7 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-base-100 text-base-content overflow-x-hidden selection:bg-primary selection:text-primary-content">
+    <div className="min-h-screen bg-base-100 text-base-content selection:bg-primary selection:text-primary-content">
       
       {/* ============================================================== */}
       {/* 1. HERO SECTION                                                */}
