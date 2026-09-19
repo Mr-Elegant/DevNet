@@ -6,7 +6,8 @@ import NavBar from '../components/NavBar'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {addUser} from "../store/userSlice"
 import { addNotification } from "../store/notificationSlice"
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import Landing from '../pages/Landing'
 import { useSocket } from "../context/SocketContext"
 import BottomNav from "../components/BottomNav"
 import { AnimatePresence, motion } from "framer-motion"
@@ -24,14 +25,17 @@ const Body = () => {
       const res = await axios.get(BASE_URL + "/profile/view", { withCredentials: true });
       dispatch(addUser(res.data));
     } catch (error) {
-      navigate("/login");
+      const isPublicPath = location.pathname === "/" || location.pathname === "/story";
+      if (!isPublicPath) {
+        navigate("/login");
+      }
       console.error(error);
     }
   };
 
   useEffect(() => {
     fetchUser();
-  }, []);
+  }, [location.pathname]);
 
 
  // ✅ GLOBAL MESSAGE LISTENER and Requests LISTENER
@@ -95,13 +99,21 @@ const Body = () => {
 
 
 
+  const isStoryOrLanding = location.pathname === "/story" || (!userData && location.pathname === "/");
+
   return (
     <div className="flex flex-col min-h-screen">
       <NavBar />
       
-      <main className="flex-1 container mx-auto px-4 py-6 relative">
-        <Outlet />
-      </main>
+      {isStoryOrLanding ? (
+        <main className="flex-1 w-full relative">
+          <Landing />
+        </main>
+      ) : (
+        <main className="flex-1 container mx-auto px-4 py-6 relative">
+          <Outlet />
+        </main>
+      )}
 
       <Footer />
 

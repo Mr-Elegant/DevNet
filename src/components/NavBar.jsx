@@ -78,6 +78,9 @@ const NavBar = () => {
           <div className="flex items-center gap-3.5">
             {/* DESKTOP LINKS */}
             <div className="hidden md:flex items-center gap-1">
+              <NavLink to="/story" className={getNavClass}>
+                Story ✨
+              </NavLink>
               <NavLink to="/search" className={getNavClass}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -216,6 +219,15 @@ const NavBar = () => {
                     <span className="badge badge-primary badge-sm">View</span>
                   </Link>
                 </li>
+                <li>
+                  <Link to="/story" className="py-2.5 px-4 rounded-xl hover:bg-base-200/50 flex items-center justify-between">
+                    Story Showcase
+                    <span className="badge badge-xs badge-primary font-mono">✨ New</span>
+                  </Link>
+                </li>
+                <li className="md:hidden">
+                  <Link to="/story" className="py-2.5 px-4 rounded-xl hover:bg-base-200/50">Story ✨</Link>
+                </li>
                 <li className="md:hidden">
                   <Link to="/search" className="py-2.5 px-4 rounded-xl hover:bg-base-200/50">Search</Link>
                 </li>
@@ -249,6 +261,25 @@ const NavBar = () => {
                 </li>
               </ul>
             </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 sm:gap-3">
+            <NavLink to="/story" className={getNavClass}>
+              Story ✨
+            </NavLink>
+            <Link
+              to="/login"
+              className="px-3.5 py-1.5 text-xs font-bold text-base-content/75 hover:text-base-content hover:bg-base-200/50 rounded-full transition-all"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/signup"
+              className="px-4 py-1.5 text-xs font-black bg-primary text-primary-content rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-all"
+            >
+              Get Started
+            </Link>
+            <ThemeSwitcher />
           </div>
         )}
       </div>

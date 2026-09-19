@@ -18,6 +18,7 @@ import SpiderCursor from "./components/SpiderCursor";
 import ViewProfile from "./pages/ViewProfile";
 import Whiteboard from "./pages/Whiteboard"; // ✨ Added Whiteboard Import
 import AdminDashboard from "./pages/AdminDashboard"; // ✨ Added AdminDashboard Import
+import Landing from "./pages/Landing"; // ✨ Added Landing / Storytelling Showcase
 import { useSocket } from "./context/SocketContext";
 import { useNavigate } from "react-router-dom";
 
@@ -128,6 +129,7 @@ const AppContent = () => {
           <Route path="/post/:postId" element={<PostDetails />} />
           <Route path="/search" element={<Search />} />
           <Route path="/whiteboard/:roomId" element={<Whiteboard />} />
+          <Route path="/story" element={<Landing />} />
 
           {/* 👑 God Mode Admin Route */}
           <Route
