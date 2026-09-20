@@ -45,9 +45,9 @@ const Landing = () => {
     },
     {
       icon: <Layers className="w-6 h-6 text-accent" />,
-      title: "Collaborative Whiteboard",
-      description: "Infinite vector canvas powered by Tldraw. Invite connections in real time to whiteboard distributed systems and system architecture.",
-      tag: "Tldraw Multi-Cursor"
+      title: "Architecture Canvas & AI Architect",
+      description: "Custom collaborative vector canvas with microservice shapes, free OpenRouter AI architecture generation, and 1-click community feed sharing.",
+      tag: "Vector Canvas + Free LLM"
     },
     {
       icon: <Globe className="w-6 h-6 text-success" />,
@@ -67,6 +67,11 @@ const Landing = () => {
       provider: "Render Web Service",
       role: "Backend & Sockets",
       detail: "Express 5 runtime with built-in keep-alive self-ping heartbeat for 24/7 uptime."
+    },
+    {
+      provider: "OpenRouter AI",
+      role: "Free LLM Engine",
+      detail: "Zero-cost Llama 3.3 70B & Gemini 2.0 Flash models generating live system design architecture topologies."
     },
     {
       provider: "Cloudflare Anycast",
@@ -150,8 +155,8 @@ const Landing = () => {
               <div className="text-[11px] text-base-content/60 font-medium">Cloud Hosting</div>
             </div>
             <div className="p-3 rounded-2xl bg-base-200/50 border border-base-content/5 backdrop-blur-sm">
-              <div className="text-lg font-black text-accent">Tldraw</div>
-              <div className="text-[11px] text-base-content/60 font-medium">Live Canvas</div>
+              <div className="text-lg font-black text-accent">AI Architect</div>
+              <div className="text-[11px] text-base-content/60 font-medium">Free LLM Engine</div>
             </div>
             <div className="p-3 rounded-2xl bg-base-200/50 border border-base-content/5 backdrop-blur-sm">
               <div className="text-lg font-black text-success">Resend</div>

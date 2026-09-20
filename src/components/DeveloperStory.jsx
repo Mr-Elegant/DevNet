@@ -23,7 +23,10 @@ import {
   ExternalLink,
   ChevronRight,
   RefreshCw,
-  Sliders
+  Sliders,
+  Palette,
+  Bot,
+  Database
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -55,6 +58,32 @@ const DeveloperStory = () => {
   // Act 2: Interactive Card State
   const [cardSwipe, setCardSwipe] = useState(null); // null | 'liked' | 'skipped'
   const [matchCelebration, setMatchCelebration] = useState(false);
+
+  // Act 3: Architecture Canvas & AI Architect Interactive State
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPromptIndex, setAiPromptIndex] = useState(0);
+  const [sharedToast, setSharedToast] = useState(false);
+
+  const aiPrompts = [
+    { title: "E-Commerce Microservices Pipeline", model: "Llama 3.3 70B (Free)" },
+    { title: "Distributed Event-Driven Kafka Stream", model: "Gemini 2.0 Flash (Free)" },
+    { title: "High-Concurrency WebSocket Gateway", model: "Llama 3.3 70B (Free)" }
+  ];
+
+  const triggerAiRegen = () => {
+    setAiGenerating(true);
+    setTimeout(() => {
+      setAiPromptIndex((prev) => (prev + 1) % aiPrompts.length);
+      setAiGenerating(false);
+    }, 700);
+  };
+
+  const triggerShareToast = () => {
+    setSharedToast(true);
+    setTimeout(() => {
+      setSharedToast(false);
+    }, 2500);
+  };
 
   // Act 4: Interactive Upvote count
   const [upvotes, setUpvotes] = useState(248);
@@ -113,8 +142,8 @@ const DeveloperStory = () => {
   const acts = [
     { id: 0, title: "01 // The Grind", label: "Solo Coder" },
     { id: 1, title: "02 // The Match", label: "MatchMaker" },
-    { id: 2, title: "03 // War Room", label: "Real-Time Sockets" },
-    { id: 3, title: "04 // The Ship", label: "Global Launch" }
+    { id: 2, title: "03 // War Room", label: "Canvas & AI Architect" },
+    { id: 3, title: "04 // The Ship", label: "Community Launch" }
   ];
 
   return (
@@ -510,34 +539,39 @@ const DeveloperStory = () => {
               <div className="lg:col-span-5 space-y-5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent border border-accent/20 text-xs font-mono font-bold tracking-wider uppercase">
                   <Zap className="w-3.5 h-3.5" />
-                  Act 03 // Zero Latency Collaboration
+                  Act 03 // Real-Time Canvas & AI Architect
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
                   The War Room. <br />
                   <span className="bg-gradient-to-r from-accent via-secondary to-primary bg-clip-text text-transparent">
-                    Sockets & Shared Canvas.
+                    Vector Canvas & AI Architect.
                   </span>
                 </h2>
 
                 <p className="text-base-content/75 text-sm sm:text-base leading-relaxed">
                   The instant connection is accepted, DevNet spins up private Socket.IO 
-                  duplex channels and infinite collaborative whiteboard rooms. 
-                  Chat, sketch schemas, and iterate with sub-50ms synchronization.
+                  duplex channels and custom collaborative vector whiteboard rooms. 
+                  Prompt the built-in AI Architect powered by free LLMs (Llama 3.3 70B & Gemini) 
+                  to scaffold distributed systems in seconds, sketch schemas, and iterate with sub-50ms multi-cursor sync.
                 </p>
 
                 <div className="space-y-2.5 font-mono text-xs text-base-content/70">
                   <div className="flex items-center gap-2">
                     <CheckCheck className="w-4 h-4 text-primary" />
-                    <span>Socket.IO bi-directional packet delivery</span>
+                    <span>Socket.IO bi-directional packet delivery (&lt; 50ms)</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCheck className="w-4 h-4 text-secondary" />
-                    <span>Live multi-cursor Tldraw vector engine</span>
+                    <span>Dedicated vector canvas: services, DB cylinders & arrows</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCheck className="w-4 h-4 text-accent" />
-                    <span>Transactional read receipts & image streaming</span>
+                    <span>AI Architect: 100% Free OpenRouter LLMs (Llama 3.3 & Gemini)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCheck className="w-4 h-4 text-success" />
+                    <span>1-Click snapshot share to Community Feed with live room launch</span>
                   </div>
                 </div>
               </div>
@@ -574,7 +608,14 @@ const DeveloperStory = () => {
 
                     <div className="flex items-end justify-end gap-1.5">
                       <div className="bg-primary text-primary-content p-2.5 rounded-2xl rounded-tr-none max-w-[85%] shadow-md">
-                        100%! Opening whiteboard now. Let's pipe Render to MongoDB Atlas.
+                        100%! Opening whiteboard now. Let's ask AI Architect to scaffold the pipeline.
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <div className="bg-base-200 p-2.5 rounded-2xl rounded-tl-none max-w-[85%] text-base-content/90 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-accent shrink-0" />
+                        <span>Boom! AI Architect generated API Gateway, Kafka queue, and Postgres DB in 1.2s!</span>
                       </div>
                     </div>
 
@@ -608,88 +649,155 @@ const DeveloperStory = () => {
 
                 {/* Screen 2: Animated Architecture Canvas */}
                 <div className="rounded-2xl bg-base-100/90 border border-base-content/15 p-4 shadow-xl backdrop-blur-xl flex flex-col justify-between h-80 relative overflow-hidden">
+                  {/* Toast Alert when Snapshot Shared */}
+                  <AnimatePresence>
+                    {sharedToast && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute top-12 left-3 right-3 z-30 bg-success text-success-content px-3 py-2 rounded-xl text-xs font-mono font-bold shadow-xl flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <Palette className="w-3.5 h-3.5" />
+                          <span>Snapshot Shared to Feed!</span>
+                        </div>
+                        <span className="text-[10px] opacity-80 font-mono">#Community</span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <div className="flex items-center justify-between pb-2 border-b border-base-content/10 z-10">
                     <span className="text-xs font-bold flex items-center gap-1.5 text-accent">
                       <Layers className="w-3.5 h-3.5" />
-                      Live Whiteboard Engine
+                      Architecture Canvas
                     </span>
-                    <span className="text-[10px] font-mono text-base-content/50">Tldraw Multi-User</span>
+                    <span className="badge badge-xs badge-accent font-mono text-[9px]">AI Architect Free</span>
+                  </div>
+
+                  {/* AI Prompt Ribbon with Interactive Prompt Button */}
+                  <div className="mt-1.5 px-2.5 py-1 rounded-lg bg-base-200/90 border border-accent/20 flex items-center justify-between gap-1.5 z-10 text-[10px] font-mono">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Bot className={`w-3 h-3 text-accent ${aiGenerating ? "animate-spin" : ""}`} />
+                      <span className="text-base-content/90 font-semibold truncate">
+                        {aiPrompts[aiPromptIndex].title}
+                      </span>
+                    </div>
+                    <button
+                      onClick={triggerAiRegen}
+                      disabled={aiGenerating}
+                      className="btn btn-xs btn-ghost text-accent hover:bg-accent/15 px-1.5 font-mono h-5 min-h-0 text-[9px] shrink-0 flex items-center gap-1"
+                      title="Simulate prompt to free LLM"
+                    >
+                      <RefreshCw className={`w-2.5 h-2.5 ${aiGenerating ? "animate-spin" : ""}`} />
+                      <span>{aiGenerating ? "Generating..." : "Prompt AI"}</span>
+                    </button>
                   </div>
 
                   {/* Animated SVG Diagram Canvas */}
-                  <div className="relative flex-1 flex items-center justify-center">
-                    <svg className="w-full h-full" viewBox="0 0 240 180">
+                  <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+                    <svg className="w-full h-full" viewBox="0 0 260 170">
                       {/* Grid background dots */}
-                      <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
+                      <pattern id="archgrid" width="16" height="16" patternUnits="userSpaceOnUse">
                         <circle cx="2" cy="2" r="1" fill="currentColor" opacity="0.1" />
                       </pattern>
-                      <rect width="240" height="180" fill="url(#grid)" />
+                      <rect width="260" height="170" fill="url(#archgrid)" />
 
                       {/* Connecting animated path lines */}
                       <path 
-                        d="M 45 40 L 120 90 L 195 40" 
+                        d="M 45 35 L 105 35 L 105 85 L 175 85" 
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth="1.5" 
                         strokeDasharray="4 4"
-                        className="text-primary/60 animate-pulse" 
+                        className="text-primary/70 animate-pulse" 
                       />
                       <path 
-                        d="M 120 90 L 120 150" 
+                        d="M 105 85 L 105 135 L 175 135" 
                         fill="none" 
                         stroke="currentColor" 
                         strokeWidth="1.5" 
                         strokeDasharray="4 4"
-                        className="text-secondary/60 animate-pulse" 
+                        className="text-secondary/70 animate-pulse" 
+                      />
+                      <path 
+                        d="M 105 35 L 175 35" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="1.5" 
+                        strokeDasharray="4 4"
+                        className="text-accent/70 animate-pulse" 
                       />
 
-                      {/* Node 1: Vercel Edge */}
-                      <g transform="translate(15, 20)">
-                        <rect width="60" height="36" rx="8" fill="oklch(var(--b2))" stroke="oklch(var(--p))" strokeWidth="1.5" />
-                        <text x="30" y="18" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold" fontFamily="monospace">Client</text>
-                        <text x="30" y="28" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="7" fontFamily="monospace">Vercel</text>
+                      {/* Node 1: API Gateway */}
+                      <g transform="translate(10, 18)">
+                        <rect width="62" height="34" rx="7" fill="oklch(var(--b2))" stroke="oklch(var(--p))" strokeWidth="1.5" />
+                        <text x="31" y="16" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="bold" fontFamily="monospace">API Gateway</text>
+                        <text x="31" y="26" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="6.5" fontFamily="monospace">:8080 RateLimit</text>
                       </g>
 
-                      {/* Node 2: Render Backend */}
-                      <g transform="translate(90, 72)">
-                        <rect width="60" height="36" rx="8" fill="oklch(var(--b2))" stroke="oklch(var(--s))" strokeWidth="1.5" />
-                        <text x="30" y="18" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold" fontFamily="monospace">Render API</text>
-                        <text x="30" y="28" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="7" fontFamily="monospace">Socket.IO</text>
+                      {/* Node 2: Service Box (Order Service) */}
+                      <g transform="translate(85, 68)">
+                        <rect width="65" height="34" rx="7" fill="oklch(var(--b2))" stroke="oklch(var(--s))" strokeWidth="1.5" />
+                        <text x="32" y="16" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Order Service</text>
+                        <text x="32" y="26" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="6.5" fontFamily="monospace">Express 5 API</text>
                       </g>
 
-                      {/* Node 3: Cloudflare DNS */}
-                      <g transform="translate(165, 20)">
-                        <rect width="60" height="36" rx="8" fill="oklch(var(--b2))" stroke="oklch(var(--a))" strokeWidth="1.5" />
-                        <text x="30" y="18" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold" fontFamily="monospace">Cloudflare</text>
-                        <text x="30" y="28" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="7" fontFamily="monospace">SSL Edge</text>
+                      {/* Node 3: Kafka Message Queue */}
+                      <g transform="translate(175, 18)">
+                        <rect width="68" height="32" rx="16" fill="oklch(var(--b2))" stroke="oklch(var(--wa))" strokeWidth="1.5" />
+                        <text x="34" y="15" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Kafka Queue</text>
+                        <text x="34" y="25" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="6.5" fontFamily="monospace">orders.stream</text>
                       </g>
 
-                      {/* Node 4: MongoDB Atlas */}
-                      <g transform="translate(90, 130)">
-                        <rect width="60" height="34" rx="8" fill="oklch(var(--b2))" stroke="oklch(var(--su))" strokeWidth="1.5" />
-                        <text x="30" y="16" textAnchor="middle" fill="currentColor" fontSize="8" fontWeight="bold" fontFamily="monospace">MongoDB</text>
-                        <text x="30" y="26" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="7" fontFamily="monospace">Atlas DB</text>
+                      {/* Node 4: Database Cylinder (Custom Whiteboard DB Shape) */}
+                      <g transform="translate(175, 68)">
+                        {/* Cylinder Body */}
+                        <path d="M 5 9 L 5 26 C 5 33 63 33 63 26 L 63 9 Z" fill="oklch(var(--b2))" stroke="oklch(var(--su))" strokeWidth="1.5" />
+                        {/* Cylinder Top Ellipse */}
+                        <ellipse cx="34" cy="9" rx="29" ry="6.5" fill="oklch(var(--b2))" stroke="oklch(var(--su))" strokeWidth="1.5" />
+                        <text x="34" y="18" textAnchor="middle" fill="currentColor" fontSize="7" fontWeight="bold" fontFamily="monospace">PostgreSQL</text>
+                        <text x="34" y="26" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="6" fontFamily="monospace">Primary DB</text>
                       </g>
 
-                      {/* Simulated Active Cursor 1 (Sarah) */}
-                      <g transform="translate(68, 85)">
+                      {/* Node 5: Redis Cache */}
+                      <g transform="translate(175, 120)">
+                        <rect width="68" height="30" rx="7" fill="oklch(var(--b2))" stroke="oklch(var(--a))" strokeWidth="1.5" />
+                        <text x="34" y="14" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="bold" fontFamily="monospace">Redis Cache</text>
+                        <text x="34" y="23" textAnchor="middle" fill="currentColor" opacity="0.6" fontSize="6.5" fontFamily="monospace">Sub-1ms State</text>
+                      </g>
+
+                      {/* Active Cursor 1 (Sarah) */}
+                      <g transform="translate(68, 105)">
                         <polygon points="0,0 8,14 4,11 0,16" fill="oklch(var(--s))" />
-                        <rect x="8" y="8" width="42" height="14" rx="4" fill="oklch(var(--s))" />
-                        <text x="29" y="18" textAnchor="middle" fill="#000" fontSize="7" fontWeight="bold">Sarah</text>
+                        <rect x="8" y="8" width="54" height="13" rx="3" fill="oklch(var(--s))" />
+                        <text x="35" y="17" textAnchor="middle" fill="#000" fontSize="6.5" fontWeight="bold">Sarah [Arrow]</text>
                       </g>
 
-                      {/* Simulated Active Cursor 2 (You) */}
-                      <g transform="translate(145, 120)">
+                      {/* Active Cursor 2 (You) */}
+                      <g transform="translate(140, 24)">
                         <polygon points="0,0 8,14 4,11 0,16" fill="oklch(var(--p))" />
-                        <rect x="8" y="8" width="36" height="14" rx="4" fill="oklch(var(--p))" />
-                        <text x="26" y="18" textAnchor="middle" fill="#fff" fontSize="7" fontWeight="bold">You</text>
+                        <rect x="8" y="8" width="46" height="13" rx="3" fill="oklch(var(--p))" />
+                        <text x="31" y="17" textAnchor="middle" fill="#fff" fontSize="6.5" fontWeight="bold">You [AI]</text>
                       </g>
                     </svg>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] font-mono text-base-content/50 pt-1 border-t border-base-content/10">
-                    <span>Active Collaborators: 2</span>
-                    <span className="text-success">Synced: 0 dropped frames</span>
+                  {/* Canvas Footer */}
+                  <div className="flex items-center justify-between text-[10px] font-mono text-base-content/70 pt-1.5 border-t border-base-content/10">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-success inline-block animate-ping" />
+                      <span>2 Peers • 0ms drop</span>
+                    </div>
+
+                    <button
+                      onClick={triggerShareToast}
+                      className="btn btn-xs btn-outline btn-success font-mono h-5 min-h-0 text-[9px] px-2 flex items-center gap-1"
+                      title="Share architecture snapshot to community feed"
+                    >
+                      <Share2 className="w-2.5 h-2.5" />
+                      <span>Share to Feed</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -711,7 +819,7 @@ const DeveloperStory = () => {
               <div className="lg:col-span-5 space-y-5">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 text-success border border-success/20 text-xs font-mono font-bold tracking-wider uppercase">
                   <Award className="w-3.5 h-3.5" />
-                  Act 04 // Shipped & Recognized
+                  Act 04 // Shipped & Community Recognized
                 </div>
 
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
@@ -724,7 +832,7 @@ const DeveloperStory = () => {
                 <p className="text-base-content/75 text-sm sm:text-base leading-relaxed">
                   Together, you and your matched counterpart transformed an isolated 
                   prototype into a globally deployed application on 100% free cloud 
-                  infrastructure. Shared to the DevNet Global Feed, verified with gold status.
+                  infrastructure. Shared your live architecture snapshot directly to the DevNet Global Feed, verified with gold status.
                 </p>
 
                 {/* Live Stats Ribbon */}
@@ -738,8 +846,8 @@ const DeveloperStory = () => {
                     <div className="text-[10px] text-base-content/60 font-mono">Keep-Alive</div>
                   </div>
                   <div className="p-3 rounded-xl bg-base-100/70 border border-base-content/10 text-center">
-                    <div className="text-xl font-black text-warning">Verified</div>
-                    <div className="text-[10px] text-base-content/60 font-mono">Gold Tier</div>
+                    <div className="text-xl font-black text-accent">Free AI</div>
+                    <div className="text-[10px] text-base-content/60 font-mono">Architect LLM</div>
                   </div>
                 </div>
 
@@ -787,13 +895,14 @@ const DeveloperStory = () => {
                           </span>
                         </div>
                         <div className="text-[11px] text-base-content/50 font-mono">
-                          Shipped 2 hours ago • #FullStack #WebSockets
+                          Shipped 2 hours ago • #FullStack #SystemDesign
                         </div>
                       </div>
                     </div>
 
-                    <span className="badge badge-ghost text-xs font-mono">
-                      🚀 v2.0 Release
+                    <span className="badge badge-accent/20 text-accent text-xs font-mono font-bold flex items-center gap-1">
+                      <Palette className="w-3 h-3" />
+                      Architecture
                     </span>
                   </div>
 
@@ -802,11 +911,36 @@ const DeveloperStory = () => {
                     "We matched on DevNet 3 weeks ago. Today we launched a zero-cost real-time collaborative IDE!"
                   </h4>
 
-                  <p className="text-xs sm:text-sm text-base-content/70 leading-relaxed mb-4">
-                    Architecture breakdown: Vercel edge deployment for sub-100ms first paint, 
-                    Render container with automated keep-alive self-ping for 24/7 socket reliability, 
-                    and Resend for lightning-fast transactional emails. Couldn't have done it alone!
+                  <p className="text-xs sm:text-sm text-base-content/70 leading-relaxed mb-3">
+                    Designed our entire distributed pipeline live on DevNet Whiteboard using the AI Architect (Llama 3.3 70B), 
+                    then shipped to Vercel & Render. Check out our live architecture canvas below!
                   </p>
+
+                  {/* Embedded Architecture Preview Card with 1-Click Launch Button */}
+                  <div className="my-3 p-3.5 rounded-2xl bg-base-200/70 border border-base-content/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+                        <Palette className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-base-content flex items-center gap-1.5 flex-wrap">
+                          <span>E-Commerce Microservices Pipeline</span>
+                          <span className="badge badge-accent badge-xs text-[9px] font-mono">LIVE WHITEBOARD</span>
+                        </div>
+                        <div className="text-[10px] text-base-content/60 font-mono">
+                          AI Architect scaffolded • 6 nodes • Shared from Room #829
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/whiteboard/prod_share_room_303"
+                      className="btn btn-xs btn-outline btn-accent font-mono gap-1.5 shadow-sm hover:scale-105 transition-transform shrink-0"
+                    >
+                      <Palette className="w-3 h-3" />
+                      <span>Open Interactive Whiteboard</span>
+                    </Link>
+                  </div>
 
                   {/* Embedded Architecture Pill Stack */}
                   <div className="flex flex-wrap gap-1.5 mb-4">
@@ -814,10 +948,10 @@ const DeveloperStory = () => {
                       ✓ React 19 + Vite
                     </span>
                     <span className="px-2.5 py-1 rounded-md bg-base-200 text-[11px] font-mono font-semibold text-secondary">
-                      ✓ Express 5 + Socket.IO
+                      ✓ Vector Whiteboard
                     </span>
                     <span className="px-2.5 py-1 rounded-md bg-base-200 text-[11px] font-mono font-semibold text-accent">
-                      ✓ MongoDB Atlas
+                      ✓ AI Architect (Free LLM)
                     </span>
                     <span className="px-2.5 py-1 rounded-md bg-base-200 text-[11px] font-mono font-semibold text-success">
                       ✓ 100% Free Cloud
