@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import axios from "axios";
 import { useSocket } from "../context/SocketContext";
+import { BASE_URL } from "../utils/constants";
 import {
   ArrowLeft,
   Share2,
@@ -24,6 +26,10 @@ import {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  Sparkles,
+  Loader2,
+  Key,
+  Bot,
 } from "lucide-react";
 
 // Vibrant developer color palette
@@ -48,6 +54,13 @@ const STICKY_COLORS = [
   { name: "Emerald", bg: "#d1fae5", text: "#064e3b" },
   { name: "Rose", bg: "#ffe4e6", text: "#881337" },
   { name: "Purple", bg: "#f3e8ff", text: "#581c87" },
+];
+
+const QUICK_PROMPT_CHIPS = [
+  { label: "⚡ URL Shortener", prompt: "High-scale URL shortener with rate limiter, base62 encoder, Redis cache, and PostgreSQL database" },
+  { label: "🛒 E-Commerce Pipeline", prompt: "E-Commerce checkout microservices with API gateway, Order Service, Kafka topic, and Stripe Payment Worker" },
+  { label: "💬 Real-Time Chat", prompt: "Real-time chat architecture with WebSocket load balancer, Socket.IO cluster, Redis Pub/Sub, and MongoDB" },
+  { label: "📊 Event Analytics", prompt: "High-throughput analytics pipeline with Client Tracking SDK, Ingestion API, Kafka cluster, and ClickHouse DB" },
 ];
 
 const Whiteboard = () => {
@@ -80,13 +93,21 @@ const Whiteboard = () => {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [editingText, setEditingText] = useState(null); // { id, x, y, text, isNew }
+  const [editingText, setEditingText] = useState(null);
 
   // Collaboration State
   const [collaborators, setCollaborators] = useState({});
   const [collaboratorCount, setCollaboratorCount] = useState(1);
   const [copied, setCopied] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
+
+  // AI Architect State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiStatusMsg, setAiStatusMsg] = useState("");
+  const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem("openrouter_api_key") || "");
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
 
   // User details for multiplayer presence
   const myName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName[0] + "." : ""}` : "Dev Partner";
@@ -179,7 +200,6 @@ const Whiteboard = () => {
     // Handle initial snapshot when joining room
     const handleSnapshot = ({ snapshot }) => {
       if (Array.isArray(snapshot) && snapshot.length > 0) {
-        // Filter valid elements
         const valid = snapshot.filter((e) => e && e.id && e.type);
         setElements(valid);
         setHistory([valid]);
@@ -233,7 +253,6 @@ const Whiteboard = () => {
 
     const handlePeerJoined = () => {
       setCollaboratorCount((prev) => prev + 1);
-      // Share current elements snapshot so newly joined peer is always synced
       setElements((currentElements) => {
         if (currentElements.length > 0) {
           socket.emit("whiteboardSendSync", { roomId, snapshot: currentElements });
@@ -393,7 +412,14 @@ const Whiteboard = () => {
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x + el.w / 2, el.y + el.h / 2 - 8 + idx * 16);
+            });
+          } else {
+            ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          }
         }
       } else if (el.type === "cylinder") {
         // Database Cylinder Icon
@@ -438,7 +464,14 @@ const Whiteboard = () => {
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x + w / 2, el.y + h / 2);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x + w / 2, el.y + h / 2 - 8 + idx * 16);
+            });
+          } else {
+            ctx.fillText(el.text, el.x + w / 2, el.y + h / 2);
+          }
         }
       } else if (el.type === "circle") {
         // Queue / Worker / Cache Node
@@ -453,11 +486,18 @@ const Whiteboard = () => {
         ctx.stroke();
 
         if (el.text) {
-          ctx.font = "600 13px 'Outfit', Inter, sans-serif";
+          ctx.font = "600 12px 'Outfit', Inter, sans-serif";
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x, el.y);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x, el.y - 7 + idx * 15);
+            });
+          } else {
+            ctx.fillText(el.text, el.x, el.y);
+          }
         }
       } else if (el.type === "arrow") {
         // API / Data Flow Arrow
@@ -525,13 +565,13 @@ const Whiteboard = () => {
 
         // Note Text
         ctx.fillStyle = el.textColor || "#78350f";
-        ctx.font = "500 13px 'Outfit', Inter, sans-serif";
+        ctx.font = "500 12px 'Outfit', Inter, sans-serif";
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
 
         const lines = (el.text || "Sticky Note").split("\n");
         lines.forEach((line, idx) => {
-          ctx.fillText(line, el.x + 10, el.y + 12 + idx * 18, el.w - 20);
+          ctx.fillText(line, el.x + 10, el.y + 12 + idx * 17, el.w - 20);
         });
       }
 
@@ -627,7 +667,6 @@ const Whiteboard = () => {
         });
       } else {
         setSelectedId(null);
-        // Drag canvas when clicking empty space with select
         setIsPanning(true);
         setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       }
@@ -843,7 +882,6 @@ const Whiteboard = () => {
 
     if (!currentDraft) return;
 
-    // Filter tiny unintentional clicks
     let valid = true;
     if (currentDraft.type === "rect" || currentDraft.type === "cylinder") {
       if (currentDraft.w < 10 && currentDraft.h < 10) valid = false;
@@ -880,7 +918,6 @@ const Whiteboard = () => {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Zoom centered on cursor
     const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
     const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
 
@@ -888,7 +925,7 @@ const Whiteboard = () => {
     setPan({ x: newPanX, y: newPanY });
   };
 
-  // Double Click: Inline Text Editing for architecture labels
+  // Double Click: Inline Text Editing
   const handleDoubleClick = (e) => {
     const pt = getCanvasPoint(e);
     const hit = elements.slice().reverse().find((el) => hitTest(pt, el));
@@ -944,7 +981,6 @@ const Whiteboard = () => {
   // -------------------------------------------------------------
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Don't trigger if user is actively typing in textarea/input
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
@@ -969,7 +1005,6 @@ const Whiteboard = () => {
         }
       }
 
-      // Quick-select tools
       const key = e.key.toLowerCase();
       if (key === "v") setActiveTool("select");
       else if (key === "h") setActiveTool("hand");
@@ -1019,10 +1054,66 @@ const Whiteboard = () => {
     socket?.emit("whiteboardClear", { roomId });
   };
 
+  // -------------------------------------------------------------
+  // 8. AI Architect: Generate Architecture from LLM Prompt
+  // -------------------------------------------------------------
+  const handleGenerateAi = async (overridePrompt) => {
+    const promptToUse = overridePrompt || aiPrompt;
+    if (!promptToUse.trim()) return;
+
+    setIsGeneratingAi(true);
+    setAiStatusMsg("Designing architecture with Llama 3.3 / Gemini 2.0 Flash...");
+
+    try {
+      // Calculate offset so new diagram appears neatly in current canvas view
+      const canvas = canvasRef.current;
+      const viewW = canvas ? canvas.clientWidth : 1000;
+      const viewH = canvas ? canvas.clientHeight : 700;
+      const targetX = Math.round(-pan.x / zoom + (viewW / 2 / zoom) - 380);
+      const targetY = Math.round(-pan.y / zoom + (viewH / 2 / zoom) - 160);
+
+      const res = await axios.post(`${BASE_URL}/whiteboard/ai-generate`, {
+        prompt: promptToUse,
+        userApiKey: userApiKey.trim() || undefined,
+        offsetX: Math.max(50, targetX),
+        offsetY: Math.max(80, targetY),
+      });
+
+      if (res.data && res.data.success && Array.isArray(res.data.elements)) {
+        const generated = res.data.elements;
+        const nextElements = [...elements, ...generated];
+        setElements(nextElements);
+        commitToHistory(nextElements);
+
+        // Sync with all peers in room
+        socket?.emit("whiteboardSendSync", { roomId, snapshot: nextElements });
+
+        setShowAiModal(false);
+        setAiPrompt("");
+        setAiStatusMsg("");
+      } else {
+        setAiStatusMsg(res.data?.message || "Could not parse architecture diagram.");
+      }
+    } catch (err) {
+      console.error("AI Generation error:", err);
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to generate diagram. If OpenRouter is busy, use a template chip or provide your free key.";
+      setAiStatusMsg(errorMsg);
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  const handleSaveApiKey = (key) => {
+    setUserApiKey(key);
+    localStorage.setItem("openrouter_api_key", key);
+  };
+
   const handleExportPNG = () => {
     if (elements.length === 0) return;
 
-    // Calculate bounding box of all elements with margin
     let minX = Infinity,
       minY = Infinity,
       maxX = -Infinity,
@@ -1063,17 +1154,15 @@ const Whiteboard = () => {
     const h = Math.max(300, maxY - minY);
 
     const offCanvas = document.createElement("canvas");
-    const dpr = 2; // High-resolution export
+    const dpr = 2;
     offCanvas.width = w * dpr;
     offCanvas.height = h * dpr;
     const ctx = offCanvas.getContext("2d");
     ctx.scale(dpr, dpr);
 
-    // Dark sleek background
     ctx.fillStyle = "#090d16";
     ctx.fillRect(0, 0, w, h);
 
-    // Draw grid
     ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
     for (let gx = 0; gx < w; gx += 28) {
       for (let gy = 0; gy < h; gy += 28) {
@@ -1083,10 +1172,8 @@ const Whiteboard = () => {
       }
     }
 
-    // Offset elements to canvas origin
     ctx.translate(-minX, -minY);
 
-    // Render each element onto export
     elements.forEach((el) => {
       ctx.save();
       ctx.strokeStyle = el.color || "#06b6d4";
@@ -1118,7 +1205,14 @@ const Whiteboard = () => {
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x + el.w / 2, el.y + el.h / 2 - 8 + idx * 16);
+            });
+          } else {
+            ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          }
         }
       } else if (el.type === "cylinder") {
         const rY = Math.min(18, el.h / 4);
@@ -1151,7 +1245,14 @@ const Whiteboard = () => {
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x + el.w / 2, el.y + el.h / 2 - 8 + idx * 16);
+            });
+          } else {
+            ctx.fillText(el.text, el.x + el.w / 2, el.y + el.h / 2);
+          }
         }
       } else if (el.type === "circle") {
         if (el.filled) {
@@ -1168,7 +1269,14 @@ const Whiteboard = () => {
           ctx.fillStyle = el.color;
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(el.text, el.x, el.y);
+          const lines = el.text.split("\n");
+          if (lines.length > 1) {
+            lines.forEach((line, idx) => {
+              ctx.fillText(line, el.x, el.y - 7 + idx * 15);
+            });
+          } else {
+            ctx.fillText(el.text, el.x, el.y);
+          }
         }
       } else if (el.type === "arrow") {
         const angle = Math.atan2(el.endY - el.startY, el.endX - el.startX);
@@ -1316,10 +1424,22 @@ const Whiteboard = () => {
       </header>
 
       {/* -------------------------------------------------------------
-          FLOATING TOOLBAR: Shapes, Hand, Pen, Colors, Widths
+          FLOATING TOOLBAR: Tools, AI Architect, Palette, Stroke Width
       -------------------------------------------------------------- */}
       <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-900/90 backdrop-blur-2xl border border-slate-700/80 rounded-2xl shadow-2xl shadow-black/60 max-w-[94vw] overflow-x-auto">
-        {/* Tool buttons */}
+        {/* AI Architect Action Button */}
+        <button
+          onClick={() => setShowAiModal(true)}
+          className="p-2 rounded-xl transition-all relative group bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 text-black font-bold shadow-lg shadow-cyan-500/30 hover:scale-105 active:scale-95 flex items-center gap-1.5 px-3"
+          title="AI Architect - Generate architecture diagrams via free LLM"
+        >
+          <Sparkles size={16} className="animate-pulse" />
+          <span className="text-xs font-extrabold tracking-wide uppercase">AI Architect</span>
+        </button>
+
+        <div className="w-px h-5 bg-slate-700/80 mx-1"></div>
+
+        {/* Standard Canvas Tools */}
         <div className="flex items-center gap-1">
           {[
             { id: "select", icon: MousePointer, label: "Select (V)" },
@@ -1350,7 +1470,6 @@ const Whiteboard = () => {
                 title={item.label}
               >
                 <Icon size={17} />
-                {/* Custom Tooltip */}
                 <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-950 text-slate-200 text-[10px] rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-slate-800 shadow-md">
                   {item.label}
                 </span>
@@ -1398,7 +1517,7 @@ const Whiteboard = () => {
           ))}
         </div>
 
-        {/* Fill Toggle for architecture shapes */}
+        {/* Fill Toggle */}
         <button
           onClick={() => setIsFilled(!isFilled)}
           className={`px-2.5 py-1 text-xs rounded-xl font-medium border transition-colors ${
@@ -1485,7 +1604,6 @@ const Whiteboard = () => {
                 }}
                 className="absolute top-0 left-0 transition-transform duration-75 ease-out pointer-events-none"
               >
-                {/* SVG Pointer Arrow */}
                 <svg
                   width="22"
                   height="22"
@@ -1499,7 +1617,6 @@ const Whiteboard = () => {
                     strokeWidth="1.2"
                   />
                 </svg>
-                {/* Collaborator Name Tag */}
                 <span
                   style={{ backgroundColor: cursor.color || "#06b6d4" }}
                   className="text-black font-bold text-[11px] px-2 py-0.5 rounded-full shadow-lg ml-3 -mt-2 inline-block whitespace-nowrap border border-black/20"
@@ -1511,7 +1628,7 @@ const Whiteboard = () => {
           })}
         </div>
 
-        {/* Inline Double-Click Text Input / Editor */}
+        {/* Inline Double-Click Text Input */}
         {editingText && (
           <div
             style={{
@@ -1560,6 +1677,170 @@ const Whiteboard = () => {
           </div>
         )}
       </div>
+
+      {/* -------------------------------------------------------------
+          AI ARCHITECT MODAL (100% Free OpenRouter Models)
+      -------------------------------------------------------------- */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900/95 border border-slate-700/90 rounded-3xl p-6 max-w-xl w-full shadow-2xl shadow-cyan-500/10 backdrop-blur-2xl flex flex-col gap-4">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    AI Architect
+                    <span className="badge badge-sm bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] uppercase font-mono">
+                      100% Free LLM
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Powered by OpenRouter Free Tier (Llama 3.3 70B & Gemini 2.0 Flash)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAiModal(false)}
+                className="btn btn-ghost btn-xs text-slate-400 hover:text-white rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Quick Prompt Chips */}
+            <div>
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
+                Instant System Design Templates:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_PROMPT_CHIPS.map((chip) => (
+                  <button
+                    key={chip.label}
+                    onClick={() => {
+                      setAiPrompt(chip.prompt);
+                      handleGenerateAi(chip.prompt);
+                    }}
+                    disabled={isGeneratingAi}
+                    className="btn btn-xs bg-slate-800/80 hover:bg-cyan-500/20 hover:border-cyan-500/50 text-slate-300 hover:text-cyan-300 border-slate-700/80 rounded-xl transition-all font-medium disabled:opacity-50"
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Prompt Textarea */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-slate-300">
+                Or describe custom architecture:
+              </label>
+              <textarea
+                rows={3}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    handleGenerateAi();
+                  }
+                }}
+                disabled={isGeneratingAi}
+                placeholder="e.g. Design a video streaming platform with S3 storage, transcoding worker, Cloudflare CDN, and MongoDB..."
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors font-sans resize-none"
+              />
+              <span className="text-[10px] text-slate-500 flex justify-between">
+                <span>Tip: Press Ctrl+Enter to generate</span>
+                <span>Auto-generates microservices, queues, DBs, and arrows</span>
+              </span>
+            </div>
+
+            {/* Status Message / Loading Feedback */}
+            {aiStatusMsg && (
+              <div
+                className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                  isGeneratingAi
+                    ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+                    : "bg-rose-500/10 text-rose-300 border border-rose-500/30"
+                }`}
+              >
+                {isGeneratingAi && <Loader2 size={15} className="animate-spin shrink-0" />}
+                <span>{aiStatusMsg}</span>
+              </div>
+            )}
+
+            {/* Optional Free OpenRouter Key Collapsible */}
+            <div className="border-t border-slate-800/80 pt-3">
+              <button
+                type="button"
+                onClick={() => setShowKeyConfig(!showKeyConfig)}
+                className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1.5 transition-colors font-medium"
+              >
+                <Key size={13} />
+                <span>{showKeyConfig ? "Hide OpenRouter API Key Settings" : "Use Custom OpenRouter Key (Optional)"}</span>
+              </button>
+
+              {showKeyConfig && (
+                <div className="mt-2 p-3 bg-slate-950/80 border border-slate-800 rounded-xl flex flex-col gap-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>Free OpenRouter API Key:</span>
+                    <a
+                      href="https://openrouter.ai/keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-cyan-400 hover:underline"
+                    >
+                      Get free key at openrouter.ai/keys ↗
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    value={userApiKey}
+                    onChange={(e) => handleSaveApiKey(e.target.value)}
+                    placeholder="sk-or-v1-..."
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono"
+                  />
+                  <span className="text-[10px] text-slate-500">
+                    Saved securely in your browser's localStorage. Free models cost $0 and require $0 credits.
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAiModal(false)}
+                disabled={isGeneratingAi}
+                className="btn btn-sm btn-ghost text-slate-400 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleGenerateAi()}
+                disabled={isGeneratingAi || !aiPrompt.trim()}
+                className="btn btn-sm bg-gradient-to-r from-cyan-500 via-sky-400 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-black font-bold border-0 rounded-xl shadow-lg shadow-cyan-500/20 gap-2 disabled:opacity-50"
+              >
+                {isGeneratingAi ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    <span>Designing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={15} />
+                    <span>Generate Architecture</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* -------------------------------------------------------------
           CLEAR CANVAS CONFIRMATION MODAL
