@@ -11,6 +11,7 @@ import Landing from '../pages/Landing'
 import { useSocket } from "../context/SocketContext"
 import BottomNav from "../components/BottomNav"
 import { AnimatePresence, motion } from "framer-motion"
+import ErrorBoundary from "../components/ErrorBoundary"
 
 const Body = () => {
   const dispatch = useDispatch();
@@ -111,7 +112,9 @@ const Body = () => {
         </main>
       ) : (
         <main className="flex-1 container mx-auto px-4 py-6 relative">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       )}
 

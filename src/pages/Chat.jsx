@@ -5,6 +5,7 @@ import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import { useSocket } from "../context/SocketContext";
 import EmojiPicker from "emoji-picker-react"; // 👈 New Import
+import { motion } from "framer-motion"; // 👈 FIX: Import motion from framer-motion
 import {
   Send,
   Image as ImageIcon,
@@ -36,6 +37,7 @@ const Chat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState("");
   const [isOnline, setIsOnline] = useState(false);
+  const [partnerProfile, setPartnerProfile] = useState(null);
 
   // 👈 New States for Emojis & Uploads
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -49,7 +51,9 @@ const Chat = () => {
   const connections = useSelector((store) => store.connections);
 
   const targetUser =
-    state?.user || connections?.find((c) => c._id === targetUserId);
+    state?.user ||
+    connections?.find((c) => c._id === targetUserId) ||
+    partnerProfile;
 
   const handleWhiteboardInvite = () => {
     if (socket && roomId && targetUserId && user) {
@@ -75,13 +79,22 @@ const Chat = () => {
       });
 
       const { chat, roomId } = res.data;
+      if (!chat) return;
 
       setChatId(chat._id);
       setRoomId(roomId);
 
-      const normalized = chat.messages.map((m) => ({
-        _id: m._id.toString(),
-        senderId: typeof m.senderId === "object" ? m.senderId._id : m.senderId,
+      // Extract partner info from chat participants if targetUser was not in route state/Redux
+      const partner = chat.participants?.find(
+        (p) => (p._id || p).toString() === targetUserId
+      );
+      if (partner && typeof partner === "object") {
+        setPartnerProfile(partner);
+      }
+
+      const normalized = (chat.messages || []).map((m) => ({
+        _id: m._id ? m._id.toString() : Math.random().toString(),
+        senderId: typeof m.senderId === "object" && m.senderId !== null ? m.senderId._id : m.senderId,
         firstName: m.senderId?.firstName || "Unknown",
         lastName: m.senderId?.lastName || "",
         text: m.text,
@@ -206,6 +219,7 @@ const Chat = () => {
       socket.off("onlineStatus", handleOnlineStatus);
       socket.off("userOnline", handleUserOnline);
       socket.off("userOffline", handleUserOffline);
+      socket.off("messageDeleted", handleMessageDeleted);
     };
   }, [socket, roomId, chatId, userId, targetUserId]);
 
@@ -242,8 +256,8 @@ const Chat = () => {
       chatId,
       roomId,
       userId,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user?.firstName || "Anonymous",
+      lastName: user?.lastName || "",
       text: newMessage,
       imageUrl: null, // No image in a standard text message
     });
@@ -278,8 +292,8 @@ const Chat = () => {
         chatId,
         roomId,
         userId,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user?.firstName || "Anonymous",
+        lastName: user?.lastName || "",
         text: newMessage, // Send along any text they had typed
         imageUrl: isImage ? fileUrl : null, // If image , use image UI
         fileUrl: !isImage ? fileUrl : null, // If not image, use file UI
@@ -298,7 +312,7 @@ const Chat = () => {
     setNewMessage(e.target.value);
 
     if (socket) {
-      socket.emit("typing", { roomId, firstName: user.firstName });
+      socket.emit("typing", { roomId, firstName: user?.firstName || "Someone" });
 
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 

@@ -4,6 +4,7 @@
 import { useState } from "react"; // Hook to manage all the form inputs
 import axios from "axios"; // HTTP client to talk to your new backend routes
 import { BASE_URL } from "../utils/constants"; // Your server URL
+import { motion } from "framer-motion"; // Animation library
 
 // We pass a 'onPostCreated' prop so we can tell the parent Feed component to refresh its list!
 const CreatePost = ({ onPostCreated }) => {
