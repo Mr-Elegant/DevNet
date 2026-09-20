@@ -29,7 +29,8 @@ import {
   Sparkles,
   Loader2,
   Key,
-  Bot,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 
 // Vibrant developer color palette
@@ -109,6 +110,16 @@ const Whiteboard = () => {
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem("openrouter_api_key") || "");
   const [showKeyConfig, setShowKeyConfig] = useState(false);
 
+  // Share to Community State
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [previewImgUrl, setPreviewImgUrl] = useState("");
+  const [postTitle, setPostTitle] = useState("");
+  const [postContent, setPostContent] = useState("");
+  const [postTags, setPostTags] = useState("architecture, systemdesign, devnet");
+  const [isPosting, setIsPosting] = useState(false);
+  const [postSuccess, setPostSuccess] = useState(false);
+  const [shareError, setShareError] = useState("");
+
   // User details for multiplayer presence
   const myName = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName[0] + "." : ""}` : "Dev Partner";
   const myColorRef = useRef(PALETTE[Math.floor(Math.random() * PALETTE.length)].value);
@@ -135,7 +146,6 @@ const Whiteboard = () => {
     };
   }, [pan, zoom]);
 
-  // Push state to Undo/Redo history
   const commitToHistory = useCallback((newElements) => {
     setHistory((prev) => {
       const trimmed = prev.slice(0, historyIndex + 1);
@@ -197,7 +207,6 @@ const Whiteboard = () => {
 
     socket.emit("joinWhiteboard", { roomId });
 
-    // Handle initial snapshot when joining room
     const handleSnapshot = ({ snapshot }) => {
       if (Array.isArray(snapshot) && snapshot.length > 0) {
         const valid = snapshot.filter((e) => e && e.id && e.type);
@@ -207,7 +216,6 @@ const Whiteboard = () => {
       }
     };
 
-    // Live element broadcast from peer
     const handleRemoteDraw = (element) => {
       if (!element || !element.id) return;
       setElements((prev) => {
@@ -216,7 +224,6 @@ const Whiteboard = () => {
       });
     };
 
-    // Live element update from peer (move, resize, text edit)
     const handleRemoteUpdate = (element) => {
       if (!element || !element.id) return;
       setElements((prev) =>
@@ -224,14 +231,12 @@ const Whiteboard = () => {
       );
     };
 
-    // Remote element deletion
     const handleRemoteDelete = (elementIds) => {
       if (!Array.isArray(elementIds)) return;
       const idSet = new Set(elementIds);
       setElements((prev) => prev.filter((el) => !idSet.has(el.id)));
     };
 
-    // Remote canvas cleared
     const handleRemoteClear = () => {
       setElements([]);
       setHistory([[]]);
@@ -239,7 +244,6 @@ const Whiteboard = () => {
       setSelectedId(null);
     };
 
-    // Remote cursor streaming
     const handleCursorUpdate = ({ peerId, cursor }) => {
       if (!peerId || !cursor) return;
       setCollaborators((prev) => ({
@@ -292,7 +296,7 @@ const Whiteboard = () => {
     };
   }, [socket, roomId]);
 
-  // Clean up stale multiplayer cursors (>4s inactive)
+  // Clean up stale cursors
   useEffect(() => {
     const timer = setInterval(() => {
       const now = Date.now();
@@ -311,12 +315,11 @@ const Whiteboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Broadcast throttled cursor updates
   const lastCursorEmit = useRef(0);
   const handleMouseMoveBroadcast = useCallback((e) => {
     if (!socket || !roomId) return;
     const now = Date.now();
-    if (now - lastCursorEmit.current < 35) return; // ~30 FPS throttling
+    if (now - lastCursorEmit.current < 35) return;
     lastCursorEmit.current = now;
 
     const pt = getCanvasPoint(e);
@@ -350,11 +353,9 @@ const Whiteboard = () => {
     ctx.save();
     ctx.scale(dpr, dpr);
 
-    // Dark architectural background
     ctx.fillStyle = "#0a0e17";
     ctx.fillRect(0, 0, width, height);
 
-    // Subtle dynamic dot grid
     const gridSize = 32 * zoom;
     const offsetX = pan.x % gridSize;
     const offsetY = pan.y % gridSize;
@@ -367,11 +368,9 @@ const Whiteboard = () => {
       }
     }
 
-    // Apply pan & zoom viewport
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
-    // Render elements list + current draft
     const allToRender = currentDraft ? [...elements, currentDraft] : elements;
 
     for (const el of allToRender) {
@@ -395,7 +394,6 @@ const Whiteboard = () => {
           ctx.stroke();
         }
       } else if (el.type === "rect") {
-        // Architecture Service Box
         if (el.filled) {
           ctx.fillStyle = `${el.color}15`;
           ctx.beginPath();
@@ -406,7 +404,6 @@ const Whiteboard = () => {
         ctx.roundRect(el.x, el.y, el.w, el.h, 8);
         ctx.stroke();
 
-        // Render Service Label
         if (el.text) {
           ctx.font = "600 13px 'Outfit', Inter, sans-serif";
           ctx.fillStyle = el.color;
@@ -422,7 +419,6 @@ const Whiteboard = () => {
           }
         }
       } else if (el.type === "cylinder") {
-        // Database Cylinder Icon
         const rY = Math.min(18, el.h / 4);
         const w = el.w;
         const h = el.h;
@@ -440,12 +436,10 @@ const Whiteboard = () => {
           ctx.fill();
         }
 
-        // Top ellipse
         ctx.beginPath();
         ctx.ellipse(el.x + w / 2, el.y + rY, w / 2, rY, 0, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Sides
         ctx.beginPath();
         ctx.moveTo(el.x, el.y + rY);
         ctx.lineTo(el.x, el.y + h - rY);
@@ -453,12 +447,10 @@ const Whiteboard = () => {
         ctx.lineTo(el.x + w, el.y + h - rY);
         ctx.stroke();
 
-        // Bottom ellipse
         ctx.beginPath();
         ctx.ellipse(el.x + w / 2, el.y + h - rY, w / 2, rY, 0, 0, Math.PI);
         ctx.stroke();
 
-        // Center Text
         if (el.text) {
           ctx.font = "600 13px 'Outfit', Inter, sans-serif";
           ctx.fillStyle = el.color;
@@ -474,7 +466,6 @@ const Whiteboard = () => {
           }
         }
       } else if (el.type === "circle") {
-        // Queue / Worker / Cache Node
         if (el.filled) {
           ctx.fillStyle = `${el.color}15`;
           ctx.beginPath();
@@ -500,7 +491,6 @@ const Whiteboard = () => {
           }
         }
       } else if (el.type === "arrow") {
-        // API / Data Flow Arrow
         const { startX, startY, endX, endY } = el;
         const angle = Math.atan2(endY - startY, endX - startX);
         const headlen = 14;
@@ -510,7 +500,6 @@ const Whiteboard = () => {
         ctx.lineTo(endX, endY);
         ctx.stroke();
 
-        // Arrowhead
         ctx.beginPath();
         ctx.fillStyle = el.color;
         ctx.moveTo(endX, endY);
@@ -541,7 +530,6 @@ const Whiteboard = () => {
         ctx.textBaseline = "alphabetic";
         ctx.fillText(el.text || "Type here...", el.x, el.y);
       } else if (el.type === "sticky") {
-        // Sticky Note
         ctx.fillStyle = el.bgColor || "#fef3c7";
         ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = 10;
@@ -554,7 +542,6 @@ const Whiteboard = () => {
 
         ctx.shadowColor = "transparent";
 
-        // Folded bottom corner accent
         ctx.fillStyle = "rgba(0,0,0,0.12)";
         ctx.beginPath();
         ctx.moveTo(el.x + el.w - 18, el.y + el.h);
@@ -563,7 +550,6 @@ const Whiteboard = () => {
         ctx.closePath();
         ctx.fill();
 
-        // Note Text
         ctx.fillStyle = el.textColor || "#78350f";
         ctx.font = "500 12px 'Outfit', Inter, sans-serif";
         ctx.textAlign = "left";
@@ -575,7 +561,6 @@ const Whiteboard = () => {
         });
       }
 
-      // Selection Highlight
       if (selectedId && el.id === selectedId) {
         ctx.strokeStyle = "#38bdf8";
         ctx.lineWidth = 1.5;
@@ -623,7 +608,6 @@ const Whiteboard = () => {
     renderCanvas();
   }, [renderCanvas]);
 
-  // Window resize handler
   useEffect(() => {
     const handleResize = () => renderCanvas();
     window.addEventListener("resize", handleResize);
@@ -634,7 +618,6 @@ const Whiteboard = () => {
   // 5. Mouse & Touch Event Handlers
   // -------------------------------------------------------------
   const handleMouseDown = (e) => {
-    // Middle click or Space held triggers pan
     if (e.button === 1 || activeTool === "hand") {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
@@ -643,7 +626,6 @@ const Whiteboard = () => {
 
     const pt = getCanvasPoint(e);
 
-    // Eraser tool
     if (activeTool === "eraser") {
       const hit = elements.slice().reverse().find((el) => hitTest(pt, el));
       if (hit) {
@@ -655,7 +637,6 @@ const Whiteboard = () => {
       return;
     }
 
-    // Select tool
     if (activeTool === "select") {
       const hit = elements.slice().reverse().find((el) => hitTest(pt, el));
       if (hit) {
@@ -673,7 +654,6 @@ const Whiteboard = () => {
       return;
     }
 
-    // Drawing Tools
     const newId = `elem_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
 
     if (activeTool === "pen") {
@@ -772,7 +752,6 @@ const Whiteboard = () => {
   const handleMouseMove = (e) => {
     handleMouseMoveBroadcast(e);
 
-    // Canvas panning
     if (isPanning) {
       setPan({
         x: e.clientX - panStart.x,
@@ -783,7 +762,6 @@ const Whiteboard = () => {
 
     const pt = getCanvasPoint(e);
 
-    // Moving a selected element
     if (activeTool === "select" && selectedId && e.buttons === 1) {
       setElements((prev) =>
         prev.map((el) => {
@@ -821,7 +799,6 @@ const Whiteboard = () => {
       return;
     }
 
-    // Continuous Eraser Drag
     if (activeTool === "eraser" && e.buttons === 1) {
       const hit = elements.slice().reverse().find((el) => hitTest(pt, el));
       if (hit) {
@@ -832,7 +809,6 @@ const Whiteboard = () => {
       return;
     }
 
-    // Updating temporary draft shapes
     if (!currentDraft) return;
 
     if (currentDraft.type === "stroke") {
@@ -905,7 +881,6 @@ const Whiteboard = () => {
     setCurrentDraft(null);
   };
 
-  // Zooming with Wheel
   const handleWheel = (e) => {
     e.preventDefault();
     const zoomFactor = 1.08;
@@ -925,7 +900,6 @@ const Whiteboard = () => {
     setPan({ x: newPanX, y: newPanY });
   };
 
-  // Double Click: Inline Text Editing
   const handleDoubleClick = (e) => {
     const pt = getCanvasPoint(e);
     const hit = elements.slice().reverse().find((el) => hitTest(pt, el));
@@ -940,7 +914,6 @@ const Whiteboard = () => {
     }
   };
 
-  // Commit inline text label
   const handleCommitText = () => {
     if (!editingText) return;
 
@@ -1023,7 +996,7 @@ const Whiteboard = () => {
   }, [selectedId, elements, historyIndex, history]);
 
   // -------------------------------------------------------------
-  // 7. Actions: Undo, Redo, Clear, Export, Share
+  // 7. Actions: Undo, Redo, Clear
   // -------------------------------------------------------------
   const handleUndo = () => {
     if (historyIndex > 0) {
@@ -1065,7 +1038,6 @@ const Whiteboard = () => {
     setAiStatusMsg("Designing architecture with Llama 3.3 / Gemini 2.0 Flash...");
 
     try {
-      // Calculate offset so new diagram appears neatly in current canvas view
       const canvas = canvasRef.current;
       const viewW = canvas ? canvas.clientWidth : 1000;
       const viewH = canvas ? canvas.clientHeight : 700;
@@ -1085,7 +1057,6 @@ const Whiteboard = () => {
         setElements(nextElements);
         commitToHistory(nextElements);
 
-        // Sync with all peers in room
         socket?.emit("whiteboardSendSync", { roomId, snapshot: nextElements });
 
         setShowAiModal(false);
@@ -1111,8 +1082,11 @@ const Whiteboard = () => {
     localStorage.setItem("openrouter_api_key", key);
   };
 
-  const handleExportPNG = () => {
-    if (elements.length === 0) return;
+  // -------------------------------------------------------------
+  // 9. Reusable Offscreen Canvas Generator (PNG Export & Community Post)
+  // -------------------------------------------------------------
+  const generateExportCanvas = useCallback(() => {
+    if (elements.length === 0) return null;
 
     let minX = Infinity,
       minY = Infinity,
@@ -1310,10 +1284,95 @@ const Whiteboard = () => {
       ctx.restore();
     });
 
+    return offCanvas;
+  }, [elements]);
+
+  const handleExportPNG = () => {
+    const offCanvas = generateExportCanvas();
+    if (!offCanvas) return;
     const link = document.createElement("a");
     link.download = `devnet_architecture_${roomId.slice(0, 8)}.png`;
     link.href = offCanvas.toDataURL("image/png");
     link.click();
+  };
+
+  // -------------------------------------------------------------
+  // 10. Share Whiteboard Architecture as a Post in Community
+  // -------------------------------------------------------------
+  const handleOpenShareModal = () => {
+    if (elements.length === 0) {
+      alert("Canvas is empty! Draw or generate an architecture diagram first.");
+      return;
+    }
+    const offCanvas = generateExportCanvas();
+    if (offCanvas) {
+      setPreviewImgUrl(offCanvas.toDataURL("image/png"));
+    }
+    setPostTitle("System Architecture Design");
+    setPostContent(
+      "Check out this system architecture diagram designed on DevNet Collaborative Whiteboard! 🚀\n\nClick the link to join the interactive canvas and collaborate live."
+    );
+    setPostSuccess(false);
+    setShareError("");
+    setShowShareModal(true);
+  };
+
+  const handlePublishToCommunity = async () => {
+    if (!user) {
+      setShareError("Please log in to share posts to the DevNet community.");
+      return;
+    }
+    if (!postTitle.trim() || !postContent.trim()) {
+      setShareError("Title and description are required.");
+      return;
+    }
+
+    setIsPosting(true);
+    setShareError("");
+
+    try {
+      const offCanvas = generateExportCanvas();
+      if (!offCanvas) throw new Error("Could not capture canvas snapshot.");
+
+      // Convert canvas to image blob
+      const blob = await new Promise((resolve) => offCanvas.toBlob(resolve, "image/png"));
+      const formData = new FormData();
+      formData.append("file", blob, `architecture_${roomId.slice(0, 8)}.png`);
+
+      // 1. Upload snapshot to Cloudinary
+      const uploadRes = await axios.post(`${BASE_URL}/uploadFile`, formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const imageUrl = uploadRes.data?.fileUrl;
+
+      // 2. Publish post to community feed
+      const tagList = postTags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      await axios.post(
+        `${BASE_URL}/post/create`,
+        {
+          type: "architecture",
+          title: postTitle.trim(),
+          content: postContent.trim(),
+          images: imageUrl ? [imageUrl] : [],
+          tags: tagList,
+          projectUrl: window.location.href,
+        },
+        { withCredentials: true }
+      );
+
+      setPostSuccess(true);
+    } catch (err) {
+      console.error("Failed to share to community:", err);
+      setShareError(err.response?.data?.message || err.message || "Failed to publish post.");
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -1333,7 +1392,7 @@ const Whiteboard = () => {
       className="fixed inset-0 w-full h-full bg-[#0a0e17] text-white flex flex-col select-none overflow-hidden font-sans z-[9999]"
     >
       {/* -------------------------------------------------------------
-          TOP BAR: Navigation, Room details, Collaborators, Actions
+          TOP BAR: Navigation, Room details, Community Share, Actions
       -------------------------------------------------------------- */}
       <header className="h-14 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 px-4 flex items-center justify-between z-20 shrink-0 shadow-lg">
         {/* Left: Back & Room Title */}
@@ -1387,7 +1446,7 @@ const Whiteboard = () => {
           </button>
         </div>
 
-        {/* Right: Collaborators & Export / Share */}
+        {/* Right: Collaborators & Community Share / Export */}
         <div className="flex items-center gap-2.5">
           {/* Active Devs Count */}
           <div
@@ -1400,6 +1459,17 @@ const Whiteboard = () => {
               {collaboratorCount} {collaboratorCount === 1 ? "Dev" : "Devs"} Live
             </span>
           </div>
+
+          {/* Share as Community Post Button */}
+          <button
+            onClick={handleOpenShareModal}
+            className="btn btn-xs sm:btn-sm bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white border-0 rounded-xl gap-1.5 shadow-lg shadow-purple-500/25"
+            title="Post this architecture diagram to DevNet Community"
+          >
+            <Globe size={14} />
+            <span className="font-semibold hidden sm:inline">Share to Community</span>
+            <span className="font-semibold sm:hidden">Community</span>
+          </button>
 
           {/* Export PNG */}
           <button
@@ -1684,7 +1754,6 @@ const Whiteboard = () => {
       {showAiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
           <div className="bg-slate-900/95 border border-slate-700/90 rounded-3xl p-6 max-w-xl w-full shadow-2xl shadow-cyan-500/10 backdrop-blur-2xl flex flex-col gap-4">
-            {/* Modal Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/30">
@@ -1710,7 +1779,6 @@ const Whiteboard = () => {
               </button>
             </div>
 
-            {/* Quick Prompt Chips */}
             <div>
               <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-2">
                 Instant System Design Templates:
@@ -1732,7 +1800,6 @@ const Whiteboard = () => {
               </div>
             </div>
 
-            {/* Custom Prompt Textarea */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-slate-300">
                 Or describe custom architecture:
@@ -1757,7 +1824,6 @@ const Whiteboard = () => {
               </span>
             </div>
 
-            {/* Status Message / Loading Feedback */}
             {aiStatusMsg && (
               <div
                 className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
@@ -1771,7 +1837,6 @@ const Whiteboard = () => {
               </div>
             )}
 
-            {/* Optional Free OpenRouter Key Collapsible */}
             <div className="border-t border-slate-800/80 pt-3">
               <button
                 type="button"
@@ -1809,7 +1874,6 @@ const Whiteboard = () => {
               )}
             </div>
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -1838,6 +1902,156 @@ const Whiteboard = () => {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* -------------------------------------------------------------
+          SHARE TO COMMUNITY MODAL
+      -------------------------------------------------------------- */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-900/95 border border-purple-500/30 rounded-3xl p-6 max-w-xl w-full shadow-2xl shadow-purple-500/10 backdrop-blur-2xl flex flex-col gap-4">
+            {postSuccess ? (
+              // Success View
+              <div className="flex flex-col items-center justify-center py-6 text-center gap-3">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Check size={28} />
+                </div>
+                <h3 className="text-xl font-bold text-white">Published to DevNet Community!</h3>
+                <p className="text-sm text-slate-300 max-w-md">
+                  Your architecture diagram has been posted to the global community feed with an interactive whiteboard launch link.
+                </p>
+                <div className="flex items-center gap-3 mt-4">
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    className="btn btn-sm btn-ghost text-slate-300 hover:text-white"
+                  >
+                    Keep Editing
+                  </button>
+                  <button
+                    onClick={() => navigate("/feed")}
+                    className="btn btn-sm bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold border-0 rounded-xl gap-2 shadow-lg shadow-cyan-500/20"
+                  >
+                    <span>View in Community Feed</span>
+                    <ExternalLink size={14} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Form View
+              <>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
+                      <Globe size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        Share to DevNet Community
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Post this architecture diagram to the feed with a live whiteboard link
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    className="btn btn-ghost btn-xs text-slate-400 hover:text-white rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Diagram Snapshot Preview */}
+                {previewImgUrl && (
+                  <div className="rounded-2xl overflow-hidden border border-slate-700 bg-slate-950/80 max-h-40 flex items-center justify-center relative group">
+                    <img
+                      src={previewImgUrl}
+                      alt="Whiteboard preview"
+                      className="w-full h-full object-contain max-h-40"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-2 pointer-events-none">
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        Auto-generated High-Res Architecture Snapshot
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Post Title */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-300">Post Title</label>
+                  <input
+                    type="text"
+                    value={postTitle}
+                    onChange={(e) => setPostTitle(e.target.value)}
+                    placeholder="e.g. Distributed E-Commerce Microservices Architecture"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors font-medium"
+                  />
+                </div>
+
+                {/* Post Content / Description */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-300">Post Description</label>
+                  <textarea
+                    rows={3}
+                    value={postContent}
+                    onChange={(e) => setPostContent(e.target.value)}
+                    placeholder="Explain the architectural choices, tradeoffs, and system flow..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors resize-none"
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Tags <span className="text-slate-500 font-normal">(comma-separated)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={postTags}
+                    onChange={(e) => setPostTags(e.target.value)}
+                    placeholder="architecture, systemdesign, microservices, devnet"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-colors font-mono"
+                  />
+                </div>
+
+                {shareError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                    {shareError}
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                  <button
+                    onClick={() => setShowShareModal(false)}
+                    disabled={isPosting}
+                    className="btn btn-sm btn-ghost text-slate-400 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePublishToCommunity}
+                    disabled={isPosting}
+                    className="btn btn-sm bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold border-0 rounded-xl shadow-lg shadow-purple-500/20 gap-2 disabled:opacity-50"
+                  >
+                    {isPosting ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        <span>Publishing Snapshot...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Globe size={15} />
+                        <span>Publish to Community</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

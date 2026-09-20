@@ -241,15 +241,17 @@ const GlobalFeed = () => {
                   {/* BADGE & DROPDOWN MENU */}
                   <div className="flex flex-col items-end gap-2.5">
                     <span className={`badge badge-sm font-extrabold uppercase tracking-widest px-2.5 py-1.5 rounded-lg border ${
-                      post.type === "launch" 
-                        ? "bg-success/10 border-success/20 text-success" 
-                        : post.type === "question" 
-                          ? "bg-error/10 border-error/20 text-error" 
-                          : post.type === "article" 
-                            ? "bg-info/10 border-info/20 text-info" 
-                            : "bg-primary/10 border-primary/20 text-primary"
+                      post.type === "architecture"
+                        ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400"
+                        : post.type === "launch" 
+                          ? "bg-success/10 border-success/20 text-success" 
+                          : post.type === "question" 
+                            ? "bg-error/10 border-error/20 text-error" 
+                            : post.type === "article" 
+                              ? "bg-info/10 border-info/20 text-info" 
+                              : "bg-primary/10 border-primary/20 text-primary"
                     }`}>
-                      {post.type}
+                      {post.type === "architecture" ? "🎨 Architecture" : post.type}
                     </span>
 
                     {loggedInUser?._id === post.author?._id && (
@@ -292,9 +294,18 @@ const GlobalFeed = () => {
                   </figure>
                 )}
 
-                {post.type === "launch" && post.projectUrl && (
-                  <a href={post.projectUrl} target="_blank" rel="noreferrer" className="btn btn-success btn-outline btn-sm rounded-xl font-bold tracking-wide w-fit mb-4">
-                    🚀 View Live App
+                {post.projectUrl && (
+                  <a 
+                    href={post.projectUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className={`btn btn-sm rounded-xl font-bold tracking-wide w-fit mb-4 gap-2 ${
+                      post.type === "architecture"
+                        ? "bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black border-0 shadow-lg shadow-cyan-500/20"
+                        : "btn-success btn-outline"
+                    }`}
+                  >
+                    {post.type === "architecture" ? "🎨 Open Interactive Whiteboard" : "🚀 View Live App"}
                   </a>
                 )}
 

@@ -209,6 +209,21 @@ const PostDetails = () => {
               <img src={post.images[0]} alt="Post attachment" className="object-cover w-full" />
             </figure>
           )}
+
+          {post.projectUrl && (
+            <a 
+              href={post.projectUrl} 
+              target="_blank" 
+              rel="noreferrer" 
+              className={`btn btn-sm rounded-xl font-bold tracking-wide w-fit mb-6 gap-2 ${
+                post.type === "architecture"
+                  ? "bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black border-0 shadow-lg shadow-cyan-500/20"
+                  : "btn-success btn-outline"
+              }`}
+            >
+              {post.type === "architecture" ? "🎨 Open Interactive Whiteboard" : "🚀 View Live App"}
+            </a>
+          )}
         </div>
       </div>
 
