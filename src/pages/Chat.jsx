@@ -57,8 +57,9 @@ const Chat = () => {
 
   const handleWhiteboardInvite = () => {
     if (socket && roomId && targetUserId && user) {
+      // 1. Emit real-time invite event (which pops up the modal on partner's screen)
       socket.emit("whiteboard-invite", {
-        targetUserId: targetUserId,
+        targetUserId: targetUserId.toString(),
         roomId: roomId,
         senderInfo: {
           _id: user._id,
@@ -66,7 +67,19 @@ const Chat = () => {
           lastName: user.lastName,
         },
       });
-      // Navigate the inviter to the whiteboard immediately
+
+      // 2. Also send a chat message so partner has the permanent 1-click link!
+      socket.emit("sendMessage", {
+        chatId,
+        roomId,
+        userId,
+        firstName: user?.firstName || "Anonymous",
+        lastName: user?.lastName || "",
+        text: `🎨 I've opened a Collaborative Whiteboard! Join me here: ${window.location.origin}/whiteboard/${roomId}`,
+        imageUrl: null,
+      });
+
+      // 3. Navigate the inviter to the whiteboard immediately
       navigate(`/whiteboard/${roomId}`);
     }
   };
@@ -389,11 +402,10 @@ const Chat = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleWhiteboardInvite}
-                disabled={!isOnline}
-                className="btn btn-xs sm:btn-sm btn-outline btn-primary rounded-xl px-3 sm:px-4"
-                title={isOnline ? "Start Collaborative Whiteboard" : "User is offline"}
+                className="btn btn-xs sm:btn-sm btn-outline btn-primary rounded-xl px-3 sm:px-4 gap-1.5"
+                title="Start Collaborative Whiteboard"
               >
-                <PenTool size={14} className="sm:mr-1.5" />
+                <PenTool size={14} />
                 <span className="hidden sm:inline">Collaborate</span>
               </motion.button>
             )}
@@ -471,7 +483,26 @@ const Chat = () => {
                     )}
 
                     {/* Render Text */}
-                    {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
+                    {msg.text && (
+                      <div>
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                        {msg.text.includes("/whiteboard/") && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const match = msg.text.match(/\/whiteboard\/([a-zA-Z0-9_-]+)/);
+                              if (match && match[1]) {
+                                navigate(`/whiteboard/${match[1]}`);
+                              }
+                            }}
+                            className="mt-2.5 btn btn-xs btn-primary rounded-xl gap-1.5 shadow-md flex items-center"
+                          >
+                            <PenTool size={12} />
+                            Join Whiteboard Session
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Message Footer (Ticks & Delete Button) */}
